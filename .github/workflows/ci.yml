@@ -1,0 +1,101 @@
+name: CI Quality Gate
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ─────────────────────────────────────────
+  # FRONTEND QUALITY GATE (Rule 14)
+  # Enforces: ESLint, TypeScript strict check
+  # ─────────────────────────────────────────
+  frontend-lint:
+    name: "Frontend — ESLint + TypeScript"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ent-dash-fe
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: ent-dash-fe/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript type check
+        run: npx tsc --noEmit
+
+  # ─────────────────────────────────────────
+  # BACKEND QUALITY GATE (Rule 14)
+  # Enforces: ruff (linting), mypy (typing)
+  # ─────────────────────────────────────────
+  backend-lint:
+    name: "Backend — Ruff + Mypy"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ent-dash-backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: ent-dash-backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt ruff mypy
+
+      - name: Run Ruff (linter)
+        run: ruff check app/ --select E,W,F --ignore E501
+
+      - name: Run Mypy (type checker)
+        run: mypy app/ --ignore-missing-imports --no-error-summary
+
+  # ─────────────────────────────────────────
+  # BACKEND TEST GATE (Rule 12 + Rule 14)
+  # Enforces: pytest behavioral tests
+  # ─────────────────────────────────────────
+  backend-tests:
+    name: "Backend — Pytest"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ent-dash-backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: ent-dash-backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest pytest-asyncio httpx
+
+      - name: Run tests
+        run: pytest tests/ -v
+        env:
+          SECRET_KEY: "test-secret-key-for-ci-pipeline"
+          API_V1_STR: "/api"

@@ -1,0 +1,120 @@
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: ent_dash_traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080" # Traefik Dashboard
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: ent_dash_redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+  db:
+    image: postgres:17-alpine
+    container_name: ent_dash_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pekalongan12
+      - POSTGRES_DB=ent-dash
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+
+  backend:
+    build:
+      context: ./ent-dash-backend
+      dockerfile: Dockerfile
+    image: ent-dash-backend:latest
+    container_name: ent_dash_backend
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pekalongan12
+      - POSTGRES_DB=ent-dash
+      - POSTGRES_PORT=5432
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.routers.backend.priority=30"
+    restart: always
+
+  recon_api:
+    build:
+      context: ./ent-dash-recon
+      dockerfile: Dockerfile
+    image: ent-dash-recon:latest
+    container_name: ent_dash_recon_api
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pekalongan12
+      - POSTGRES_DB=ent-dash
+      - POSTGRES_PORT=5432
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.recon.rule=PathPrefix(`/api/imports`)"
+      - "traefik.http.routers.recon.entrypoints=web"
+      - "traefik.http.routers.recon.priority=40"
+    restart: always
+
+  celery_worker:
+    build:
+      context: ./ent-dash-recon
+      dockerfile: Dockerfile
+    image: ent-dash-recon:latest
+    container_name: ent_dash_celery
+    command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pekalongan12
+      - POSTGRES_DB=ent-dash
+      - POSTGRES_PORT=5432
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - db
+    restart: always
+
+  frontend:
+    build:
+      context: ./ent-dash-fe
+      dockerfile: Dockerfile
+    image: ent-dash-frontend:latest
+    container_name: ent_dash_frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://172.20.10.4/api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.priority=1"
+    restart: always
+
+volumes:
+  pgdata:
