@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+/* Force class-based dark mode for Tailwind v4 */
+@variant dark (&:is(.dark, .dark *));
+
+@theme inline {
+  --color-brand-blue: #1A56DB;
+  --color-brand-blue-hover: #1e40af;
+  --color-success: #0E9F6E;
+  --color-danger: #E02424;
+  --color-warning: #FF8A4C;
+}
+
+/* Display Density Controls */
+.size-compact {
+  font-size: 14px;
+}
+
+.size-comfortable {
+  font-size: 16px;
+}
+
+.size-large {
+  font-size: 18px;
+}
+
+/* Global Theme Defaults */
+body {
+  @apply bg-white text-gray-900 antialiased;
+}
+
+/* Explicit Light Mode Vibrancy (Ensuring no bleed-through) */
+html:not(.dark) body {
+  background-color: #ffffff;
+  color: #111827;
+}
+
+.dark body {
+  @apply bg-gray-950 text-gray-100;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+/* Theme-aware global transitions - selective for performance */
+body,
+.sidebar,
+.header,
+.card {
+  @apply transition-colors duration-300;
+}
+
+/* Base styles for dark mode borders and elements */
+.dark .border-gray-100,
+.dark .border-gray-200 {
+  @apply border-gray-800;
+}
+
+.dark .bg-white {
+  @apply bg-gray-900;
+}
+
+.dark .bg-gray-50 {
+  @apply bg-gray-950;
+}
+
+.dark .text-gray-900 {
+  @apply text-white;
+}
+
+.dark .text-gray-600 {
+  @apply text-gray-400;
+}
+
+.dark .text-gray-500 {
+  @apply text-gray-500;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  @apply hover:bg-gray-800;
+}

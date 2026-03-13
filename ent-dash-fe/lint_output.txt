@@ -1,0 +1,151 @@
+
+> ent-dash-fe@0.1.0 lint
+> eslint
+
+
+/Users/robileksono/Sites/ent-dash-fe/__tests__/security/AuthStateGuard.test.tsx
+  23:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  24:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/ent-dash-fe/app/(dashboard)/settings/permissions/layout.tsx
+  27:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/robileksono/Sites/ent-dash-fe/app/(dashboard)/settings/permissions/layout.tsx:27:9
+  25 |         }
+  26 |
+> 27 |         setIsAuthorized(true);
+     |         ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  28 |     }, [isAuthenticated, isLoading, user, router]);
+  29 |
+  30 |     if (isLoading || !isAuthorized) {  react-hooks/set-state-in-effect
+
+/Users/robileksono/Sites/ent-dash-fe/app/(dashboard)/settings/roles/layout.tsx
+  27:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/robileksono/Sites/ent-dash-fe/app/(dashboard)/settings/roles/layout.tsx:27:9
+  25 |         }
+  26 |
+> 27 |         setIsAuthorized(true);
+     |         ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  28 |     }, [isAuthenticated, isLoading, user, router]);
+  29 |
+  30 |     if (isLoading || !isAuthorized) {  react-hooks/set-state-in-effect
+
+/Users/robileksono/Sites/ent-dash-fe/app/(dashboard)/settings/roles/page.tsx
+  75:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  93:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/ent-dash-fe/app/(dashboard)/settings/users/layout.tsx
+  27:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/robileksono/Sites/ent-dash-fe/app/(dashboard)/settings/users/layout.tsx:27:9
+  25 |         }
+  26 |
+> 27 |         setIsAuthorized(true);
+     |         ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  28 |     }, [isAuthenticated, isLoading, user, router]);
+  29 |
+  30 |     if (isLoading || !isAuthorized) {  react-hooks/set-state-in-effect
+
+/Users/robileksono/Sites/ent-dash-fe/app/components/AuthContext.tsx
+  59:17  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/robileksono/Sites/ent-dash-fe/app/components/AuthContext.tsx:59:17
+  57 |         if (storedUser) {
+  58 |             try {
+> 59 |                 setUser(JSON.parse(storedUser));
+     |                 ^^^^^^^ Avoid calling setState() directly within an effect
+  60 |             } catch (e) {
+  61 |                 console.error("Failed to parse stored user", e);
+  62 |                 sessionStorage.removeItem("auth-user");  react-hooks/set-state-in-effect
+
+/Users/robileksono/Sites/ent-dash-fe/app/components/ProtectedRoute.tsx
+  72:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/robileksono/Sites/ent-dash-fe/app/components/ProtectedRoute.tsx:72:9
+  70 |         }
+  71 |
+> 72 |         setIsAuthorized(true);
+     |         ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  73 |     }, [isAuthenticated, isLoading, user, allowedRoles, requiredUnitCode, allowedPositions, router, pathname]);
+  74 |
+  75 |     if (isLoading || !isAuthorized) {  react-hooks/set-state-in-effect
+
+/Users/robileksono/Sites/ent-dash-fe/app/components/SettingsContext.tsx
+  50:25  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/robileksono/Sites/ent-dash-fe/app/components/SettingsContext.tsx:50:25
+  48 |         }
+  49 |
+> 50 |         if (savedTheme) setTheme(savedTheme);
+     |                         ^^^^^^^^ Avoid calling setState() directly within an effect
+  51 |         if (savedSize) setSize(savedSize);
+  52 |         if (savedLang) setLanguage(savedLang);
+  53 |  react-hooks/set-state-in-effect
+
+/Users/robileksono/Sites/ent-dash-fe/app/components/dashboard/QrisDataTable.tsx
+  4:18  warning  'Filter' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/ent-dash-fe/app/components/layout/Sidebar/Sidebar.tsx
+  94:8  warning  React Hook React.useEffect has missing dependencies: 't.rekonQrisOnus' and 't.rekonQrisRintis'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/robileksono/Sites/ent-dash-fe/app/components/layout/Sidebar/UserProfile.tsx
+  16:11  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/ent-dash-fe/app/components/permissions/PermissionForm.tsx
+  33:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/ent-dash-fe/app/components/roles/RoleForm.tsx
+   1:28  warning  'useState' is defined but never used           @typescript-eslint/no-unused-vars
+  30:53  warning  'setValue' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/ent-dash-fe/app/components/users/UserForm.tsx
+  1:28  warning  'useState' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/ent-dash-fe/app/login/page.tsx
+  12:11  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/ent-dash-fe/generateSample.js
+   1:12  error    A `require()` style import is forbidden       @typescript-eslint/no-require-imports
+   2:18  error    A `require()` style import is forbidden       @typescript-eslint/no-require-imports
+   3:14  error    A `require()` style import is forbidden       @typescript-eslint/no-require-imports
+  26:13  warning  'headers' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 22 problems (14 errors, 8 warnings)
+
