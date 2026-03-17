@@ -1,10 +1,10 @@
 "use client";
 
-import { FilterBar } from "@/app/components/dashboard/FilterBar";
-import { MetricCard } from "@/app/components/dashboard/MetricCard";
-import { useTranslation } from "@/app/hooks/useTranslation";
+import { FilterBar } from "@/components/dashboard/FilterBar";
+import { MetricCard } from "@/components/dashboard/MetricCard";
+import { useTranslation } from "@/hooks/useTranslation";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { PageHeader } from "@/app/components/ui/PageHeader";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 const MOCK_OPERATIONS_DATA = [
     { name: "QRIS AJ", value: 450, color: "#3B82F6" },

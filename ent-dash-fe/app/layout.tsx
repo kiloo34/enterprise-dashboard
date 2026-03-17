@@ -6,10 +6,10 @@ export const metadata: Metadata = {
   description: "Monitoring engine dashboard",
 };
 
-import { SettingsProvider } from "./components/SettingsContext";
-import { AuthProvider } from "./components/AuthContext";
+import { SettingsProvider } from "@/components/SettingsContext";
+import { AuthProvider } from "@/components/AuthContext";
 import { Toaster } from "sonner";
-import { SWRProvider } from "./components/SWRProvider";
+import { SWRProvider } from "@/components/SWRProvider";
 
 export default function RootLayout({
   children,

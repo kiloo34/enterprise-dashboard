@@ -1,6 +1,6 @@
 
 
-import { ProtectedRoute } from "../../components/ProtectedRoute";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function OperasiLayout({
     children,

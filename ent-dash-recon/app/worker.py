@@ -14,4 +14,8 @@ celery_app.conf.update(
     timezone="Asia/Jakarta",
     enable_utc=True,
     task_track_started=True,
+    broker_transport_options={
+        'priority_steps': list(range(10)),
+        'queue_order_strategy': 'priority',
+    }
 )

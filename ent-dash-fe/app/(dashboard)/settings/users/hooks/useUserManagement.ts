@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
-import { User, Role, Position, OrganizationUnit, UserFormData, Permission } from '../../../../types/user';
-import { userApi } from '../../../../utils/api/userApi';
-import { permissionApi } from '../../../../utils/api/permissionApi';
-import { useAuth } from '../../../../components/AuthContext';
-import { useTranslation } from '../../../../hooks/useTranslation';
+import { User, Role, Position, OrganizationUnit, UserFormData, Permission } from '@/types/user';
+import { userApi } from '@/utils/api/userApi';
+import { permissionApi } from '@/utils/api/permissionApi';
+import { useAuth } from '@/components/AuthContext';
+import { useTranslation } from '@/hooks/useTranslation';
 import { toast } from 'sonner';
 
 // Helper for lookups

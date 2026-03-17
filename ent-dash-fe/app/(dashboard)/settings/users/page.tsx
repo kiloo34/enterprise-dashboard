@@ -2,7 +2,7 @@
 
 import React from 'react';
 import dynamic from 'next/dynamic';
-import { DeleteConfirmationModal } from '../../../components/ui/DeleteConfirmationModal';
+import { DeleteConfirmationModal } from '@/components/ui/DeleteConfirmationModal';
 import { useUserManagement } from './hooks/useUserManagement';
 import { UserHeader } from './components/UserHeader';
 import { UserFilterBar } from './components/UserFilterBar';
@@ -10,7 +10,7 @@ import { UserTable } from './components/UserTable';
 
 // ✦ Lazy-load the heavy UserForm (org tree, role/permission checkboxes, zod)
 const UserForm = dynamic(
-    () => import('../../../components/users/UserForm').then(m => ({ default: m.UserForm })),
+    () => import('@/components/users/UserForm').then(m => ({ default: m.UserForm })),
     { ssr: false, loading: () => null }
 );
 

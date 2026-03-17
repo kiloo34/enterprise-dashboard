@@ -1,107 +1,139 @@
-import csv
+ import csv
 import io
 import asyncio
-from datetime import datetime
+import json
+from datetime import datetime, timezone
 
 from app.worker import celery_app
 from app.db.session import AsyncSessionLocal
 from sqlalchemy import text
 
 
-# ─── Delimiter Auto-Detection ─────────────────────────────────────────────────
-SUPPORTED_DELIMITERS = [";", ",", "\t", "|"]
+from app.services.imports import detect_delimiter, validate_csv_structure
 
-def _detect_delimiter(sample: str) -> str | None:
-    """
-    Try each supported delimiter and return the one that produces
-    the most consistent column count across rows.
-    Returns None if no valid CSV structure is found.
-    """
-    best_delimiter = None
-    best_score = 0
-
-    for delim in SUPPORTED_DELIMITERS:
-        try:
-            reader = csv.reader(io.StringIO(sample), delimiter=delim)
-            rows = list(reader)
-            if len(rows) < 2:
-                continue
-
-            col_counts = [len(r) for r in rows]
-            header_cols = col_counts[0]
-
-            if header_cols < 2:
-                continue
-
-            # Score: how many rows match the header col count (consistency)
-            consistent = sum(1 for c in col_counts if c == header_cols)
-            score = consistent * header_cols
-
-            if score > best_score:
-                best_score = score
-                best_delimiter = delim
-        except Exception:
-            continue
-
-    return best_delimiter
-
-
-def _validate_csv_structure(sample: str, delimiter: str) -> tuple[bool, str]:
-    """
-    Validate that the file has a proper CSV structure.
-    Returns (is_valid, error_message).
-    """
-    try:
-        reader = csv.reader(io.StringIO(sample), delimiter=delimiter)
-        rows = list(reader)
-
-        if not rows:
-            return False, "File kosong atau tidak dapat dibaca."
-
-        header = rows[0]
-        if len(header) < 2:
-            return False, (
-                f"Format dokumen tidak valid sebagai CSV. "
-                f"Header hanya memiliki {len(header)} kolom. "
-                f"Minimum 2 kolom diperlukan. "
-                f"Pastikan file menggunakan delimiter yang benar (;, koma, atau tab)."
-            )
-
-        data_rows = rows[1:]
-        if len(data_rows) == 0:
-            return False, "File tidak memiliki data (hanya header)."
-
-        # Check consistency: at least 70% of rows must match header col count
-        expected_cols = len(header)
-        matching = sum(1 for r in data_rows if len(r) == expected_cols)
-        consistency = matching / len(data_rows)
-
-        if consistency < 0.7:
-            return False, (
-                f"Struktur CSV tidak konsisten. Header memiliki {expected_cols} kolom, "
-                f"tapi mayoritas baris data tidak sesuai. "
-                f"Dokumen mungkin bukan format CSV yang valid."
-            )
-
-        return True, ""
-
-    except Exception as e:
-        return False, f"Gagal memvalidasi struktur file: {str(e)}"
+# ─── Task Definition ──────────────────────────────────────────────────────────
 
 
 @celery_app.task(bind=True, name="tasks.process_csv_import", max_retries=3)
 def process_csv_import(self, import_id: str, file_path: str, target_table: str):
     """
     Background task to process a CSV/TXT file and bulk-insert into target_table.
-    Supports auto-detection of delimiters (;, comma, tab, pipe).
-    Rejects files that are not structured as valid CSV.
     """
-    asyncio.run(_process_csv(import_id, file_path, target_table))
+    try:
+        # Use a fresh loop for each task to avoid loop-mismatch errors in Celery workers
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(_process_csv(import_id, file_path, target_table))
+        finally:
+            loop.close()
+    except Exception as e:
+        import logging
+        logging.error(f"Fatal error in process_csv_import task for {import_id}: {str(e)}")
+        raise
+
+
+async def _get_table_schema(db, target_table: str) -> dict[str, dict[str, str]]:
+    """
+    Fetch column names and data types for the target table.
+    Returns a dict {column_name_lower: {"name": original_name, "type": data_type}}.
+    """
+    schema_name = "public"
+    table_name = target_table
+    
+    # Clean quotes and split schema
+    clean_target = target_table.replace('"', '')
+    if "." in clean_target:
+        parts = clean_target.split(".")
+        schema_name = parts[0]
+        table_name = parts[1]
+    
+    # Try case-sensitive first, then case-insensitive
+    query = text("""
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE (table_schema = :schema AND table_name = :table)
+           OR (lower(table_schema) = lower(:schema) AND lower(table_name) = lower(:table))
+        ORDER BY ordinal_position
+    """)
+    
+    result = await db.execute(query, {"schema": schema_name, "table": table_name})
+    rows = result.fetchall()
+    
+    if not rows:
+        import logging
+        logging.warning(f"No columns found for {schema_name}.{table_name} in information_schema. Trying default public schema.")
+        result = await db.execute(query, {"schema": "public", "table": table_name})
+        rows = result.fetchall()
+
+    return {row[0].lower(): {"name": row[0], "type": row[1]} for row in rows}
+
+
+def _cast_value(value: str | None, data_type: str) -> any:
+    """Perform smart casting based on PostgreSQL data type."""
+    if value is None or (isinstance(value, str) and (value.strip() == "" or value.lower() == "null")):
+        return None
+    
+    val = str(value).strip()
+    dt = data_type.lower()
+    
+    try:
+        if "boolean" in dt:
+            return val.lower() in ("true", "t", "1", "yes", "y", "ya")
+        
+        if "integer" in dt or "bigint" in dt or "smallint" in dt:
+            # Remove thousand separators if any (dots or commas)
+            clean_val = val.replace(".", "").replace(",", "")
+            return int(clean_val)
+            
+        if "numeric" in dt or "decimal" in dt or "double" in dt or "real" in dt:
+            # Handle Indonesian format: dots as thousand sep, comma as decimal
+            if "," in val and "." in val:
+                clean_val = val.replace(".", "").replace(",", ".")
+            elif "," in val:
+                # Heuristic: if comma is near the end, it's decimal.
+                if len(val.split(",")[-1]) <= 2:
+                    clean_val = val.replace(",", ".")
+                else:
+                    clean_val = val.replace(",", "")
+            else:
+                clean_val = val
+            return float(clean_val)
+            
+        if "date" in dt or "timestamp" in dt:
+            # Common formats: YYYY-MM-DD, DD/MM/YYYY, etc.
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d", "%d-%m-%Y"):
+                try:
+                    dt_obj = datetime.strptime(val, fmt)
+                    return dt_obj.date() if "date" == dt else dt_obj
+                except ValueError:
+                    continue
+            return val
+            
+    except Exception:
+        return val
+        
+    return val
 
 
 async def _process_csv(import_id: str, file_path: str, target_table: str):
     async with AsyncSessionLocal() as db:
-        # Mark as processing
+        # Normalize target_table
+        if "." not in target_table:
+            engine_tables = [
+                "engine_sts_load_data", "engine_sts_load_data_his",
+                "engine_sts_proses_rpt", "engine_sts_proses_rpt_his",
+                "rekon_qris_aj", "rekon_qris_onus", "rekon_qris_rintis",
+                "engine_job_log", "engine_job_entry_log"
+            ]
+            if target_table in engine_tables:
+                target_table = f"rekon.{target_table}"
+            elif target_table == "fact_kinerjaprc":
+                target_table = f'"TABLEAU_REPORT".{target_table}'
+        elif target_table.startswith("TABLEAU_REPORT."):
+            table_name = target_table.split(".")[-1]
+            target_table = f'"TABLEAU_REPORT".{table_name}'
+
         await db.execute(
             text("UPDATE app.file_imports SET status='processing' WHERE id=:id"),
             {"id": import_id}
@@ -109,78 +141,179 @@ async def _process_csv(import_id: str, file_path: str, target_table: str):
         await db.commit()
 
         try:
-            # Read a sample to detect delimiter and validate structure
+            # Fetch Schema for casting
+            schema_meta = await _get_table_schema(db, target_table)
+            if not schema_meta:
+                 raise ValueError(f"Tabel tujuan {target_table} tidak ditemukan di database.")
+
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
-                sample = f.read(8192)  # Read first 8KB for detection
+                sample = f.read(8192)
 
             if not sample.strip():
                 raise ValueError("File kosong atau tidak dapat dibaca.")
 
-            # Auto-detect delimiter
-            delimiter = _detect_delimiter(sample)
+            delimiter = detect_delimiter(sample)
             if delimiter is None:
-                raise ValueError(
-                    "Dokumen bukan format CSV yang valid. "
-                    "Tidak ditemukan pola kolom yang konsisten. "
-                    "Pastikan file menggunakan pemisah: titik koma (;), koma (,), atau tab."
-                )
+                raise ValueError("Format CSV tidak dideteksi.")
 
-            # Validate CSV structure
-            is_valid, err_msg = _validate_csv_structure(sample, delimiter)
-            if not is_valid:
-                raise ValueError(err_msg)
-
-            # Process the file
-            CHUNK_SIZE = 500
-            rows = []
+            # Pre-count rows
             total_rows = 0
+            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+                total_rows = max(0, sum(1 for _ in f) - 1)
+
+            await db.execute(
+                text("UPDATE app.file_imports SET total_rows=:total, updated_at=now() WHERE id=:id"),
+                {"total": total_rows, "id": import_id}
+            )
+            await db.commit()
+
+            # Process the file in chunks
+            CHUNK_SIZE = 1000
+            rows = []
             processed_rows = 0
             failed_rows = 0
+            error_counts = {} # message -> count
+
+            # Improved Header Matching
+            def _clean_h(h: str) -> str:
+                if not h: return ""
+                # Remove quotes, #, spaces, and replace dots/dashes with underscore
+                res = h.strip().lower().replace('"', '').replace("'", "").replace("#", "")
+                res = res.replace(" ", "_").replace(".", "_").replace("-", "_")
+                # Collapse multiple underscores
+                while "__" in res: res = res.replace("__", "_")
+                return res.strip("_")
 
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 reader = csv.DictReader(f, delimiter=delimiter)
-                headers = [h.strip().lower() for h in (reader.fieldnames or [])]
-                reader.fieldnames = headers
+                # Map headers to schema
+                raw_headers = reader.fieldnames or []
+                csv_headers_clean = [_clean_h(h) for h in raw_headers]
+                
+                # Check for direct matches first, then fuzzy matches
+                column_mapping = {}
+                schema_cols_clean = { _clean_h(k): v for k, v in schema_meta.items() }
 
-                for row in reader:
-                    total_rows += 1
-                    normalized = {k.strip().lower(): (v.strip() if v else None) for k, v in row.items()}
-                    rows.append(normalized)
+                for i, h_clean in enumerate(csv_headers_clean):
+                    orig_h = raw_headers[i]
+                    # Strategy 1: Exact lowercase match
+                    if h_clean in schema_meta:
+                        column_mapping[orig_h] = schema_meta[h_clean]
+                    # Strategy 2: Cleaned match (e.g. "Transaction ID" -> "transaction_id")
+                    elif h_clean in schema_cols_clean:
+                        column_mapping[orig_h] = schema_cols_clean[h_clean]
+                    # Strategy 3: Handle common variations
+                    else:
+                        variations = {
+                            "transactionid": "transaction_id",
+                            "userid": "user_id",
+                            "createdat": "created_at",
+                            "updatedat": "updated_at",
+                        }
+                        mapped_v = variations.get(h_clean)
+                        if mapped_v and mapped_v in schema_meta:
+                            column_mapping[orig_h] = schema_meta[mapped_v]
+
+                if not column_mapping:
+                    available_db_cols = ", ".join(schema_meta.keys())
+                    raise ValueError(
+                        f"Header CSV ({', '.join(raw_headers)}) tidak cocok dengan kolom database ({available_db_cols}). "
+                        "Pastikan nama kolom di file CSV sesuai dengan yang diharapkan."
+                    )
+
+                for row_idx, raw_row in enumerate(reader):
+                    try:
+                        normalized = {}
+                        for h_lower, meta in column_mapping.items():
+                            # Find original key in raw_row
+                            orig_key = next((k for k in raw_row.keys() if k.strip().lower() == h_lower), None)
+                            if orig_key:
+                                val = raw_row[orig_key]
+                                normalized[meta["name"]] = _cast_value(val, meta["type"])
+                        
+                        rows.append(normalized)
+                    except Exception as row_err:
+                        failed_rows += 1
+                        msg = str(row_err)
+                        error_counts[msg] = error_counts.get(msg, 0) + 1
+                        continue
 
                     if len(rows) >= CHUNK_SIZE:
-                        ok, fail = await _bulk_insert(db, target_table, rows)
+                        # Check for cancellation
+                        check_res = await db.execute(
+                            text("SELECT status FROM app.file_imports WHERE id=:id"),
+                            {"id": import_id}
+                        )
+                        current_status = check_res.scalar()
+                        if current_status == "cancelled":
+                            logging.info(f"Import {import_id} cancelled by user. Stopping.")
+                            return
+
+                        # Update progress every 5000 rows
+                        if processed_rows % 5000 == 0:
+                            await db.execute(
+                                text("UPDATE app.file_imports SET processed_rows=:proc, failed_rows=:fail, updated_at=now() WHERE id=:id"),
+                                {"proc": processed_rows, "fail": failed_rows, "id": import_id}
+                            )
+                            await db.commit()
+
+                        ok, fail, err = await _bulk_insert(db, target_table, rows)
                         processed_rows += ok
                         failed_rows += fail
+                        if err:
+                            error_counts[err] = error_counts.get(err, 0) + len(rows)
                         rows = []
 
+                        # Update progress
+                        if processed_rows % 5000 == 0:
+                            await db.execute(
+                                text("UPDATE app.file_imports SET processed_rows=:proc, failed_rows=:fail, updated_at=now() WHERE id=:id"),
+                                {"proc": processed_rows, "fail": failed_rows, "id": import_id}
+                            )
+                            await db.commit()
+
                 if rows:
-                    ok, fail = await _bulk_insert(db, target_table, rows)
+                    ok, fail, err = await _bulk_insert(db, target_table, rows)
                     processed_rows += ok
                     failed_rows += fail
+                    if err:
+                        error_counts[err] = error_counts.get(err, 0) + len(rows)
 
             final_status = "completed" if failed_rows == 0 else "partial"
+            error_log_val = None
+            if error_counts:
+                error_log_val = json.dumps({"errors": error_counts, "failed_rows_total": failed_rows, "timestamp": datetime.now(timezone.utc).isoformat()})
+
             await db.execute(
                 text("""
                     UPDATE app.file_imports
-                    SET status=:status, total_rows=:total, processed_rows=:proc, failed_rows=:fail
+                    SET status=:status, total_rows=:total, processed_rows=:proc, failed_rows=:fail,
+                        error_log=CASE WHEN :err IS NOT NULL THEN CAST(:err AS jsonb) ELSE error_log END,
+                        updated_at=now()
                     WHERE id=:id
                 """),
-                {"status": final_status, "total": total_rows, "proc": processed_rows, "fail": failed_rows, "id": import_id}
+                {"status": final_status, "total": total_rows, "proc": processed_rows, "fail": failed_rows, "err": error_log_val, "id": import_id}
             )
             await db.commit()
 
         except Exception as e:
+            import traceback
+            error_detail = json.dumps({
+                "message": str(e),
+                "traceback": traceback.format_exc()[-500:],
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
             await db.execute(
-                text("UPDATE app.file_imports SET status='failed', error_log=:err WHERE id=:id"),
-                {"err": str(e), "id": import_id}
+                text("UPDATE app.file_imports SET status='failed', error_log=CAST(:err AS jsonb), updated_at=now() WHERE id=:id"),
+                {"err": error_detail, "id": import_id}
             )
             await db.commit()
 
 
-async def _bulk_insert(db, target_table: str, rows: list) -> tuple[int, int]:
-    """Insert a chunk of rows into target_table and return (ok, fail) counts."""
+async def _bulk_insert(db, target_table: str, rows: list) -> tuple[int, int, str | None]:
+    """Insert a chunk of rows into target_table."""
     if not rows:
-        return 0, 0
+        return 0, 0, None
 
     cols = list(rows[0].keys())
     col_names = ", ".join(f'"{c}"' for c in cols)
@@ -192,7 +325,9 @@ async def _bulk_insert(db, target_table: str, rows: list) -> tuple[int, int]:
             rows
         )
         await db.commit()
-        return len(rows), 0
+        return len(rows), 0, None
     except Exception as e:
+        import logging
+        logging.error(f"Bulk insert failed for table {target_table}: {str(e)}")
         await db.rollback()
-        return 0, len(rows)
+        return 0, len(rows), str(e)

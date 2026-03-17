@@ -3,9 +3,9 @@
 import React, { useState } from "react";
 import { BarChart2, Briefcase, ShieldCheck, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 
-import { useSettings } from "../components/SettingsContext";
-import { useAuth } from "../components/AuthContext";
-import { useTranslation } from "../hooks/useTranslation";
+import { useSettings } from "@/components/SettingsContext";
+import { useAuth } from "@/components/AuthContext";
+import { useTranslation } from "@/hooks/useTranslation";
 import clsx from "clsx";
 
 export default function LoginPage() {

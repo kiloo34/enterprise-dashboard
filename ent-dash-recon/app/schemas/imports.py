@@ -12,6 +12,7 @@ class FileImportResponse(BaseModel):
     total_rows: int = 0
     processed_rows: int = 0
     failed_rows: int = 0
+    priority: int = 0
     status: str
     error_log: Optional[Dict[str, Any]] = None
     created_at: Optional[datetime] = None

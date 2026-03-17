@@ -1,20 +1,26 @@
 FROM node:20-alpine AS base
 
 # 1. Install dependencies only when needed
+# FROM base AS deps
+# RUN apk add --no-cache libc6-compat
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json ./
+COPY package-lock.json ./
+RUN npm install --legacy-peer-deps
 
 # 2. Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Build arg for the API URL – passed in from docker-compose
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 RUN npm run build
 

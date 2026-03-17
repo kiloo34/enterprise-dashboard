@@ -4,6 +4,7 @@ from sqlalchemy import select
 from app.db.session import AsyncSessionLocal
 from app.models.user import User, Position, OrganizationUnit
 from app.models.role_permission import Role, Permission, RoleHasPermission, ModelHasRole
+from app.models.dashboard import FinancialIndicator, FinancialMetric
 from app.core.security import get_password_hash
 from app.schemas.enums import RoleType
 
@@ -280,11 +281,130 @@ async def seed_data(db: AsyncSession):
         await db.flush()
 
     await db.commit()
-    print("Seeding completed successfully!")
+    print("Core seeding completed successfully!")
+
+async def seed_financial_data(db: AsyncSession):
+    # All 37 indicators organized by category
+    indicators = [
+        # DPK ROOT
+        {"slug": "cat_dpk", "label": "DANA PIHAK KETIGA (DPK)", "category": "DPK", "level": 0, "is_bold": True},
+        {"slug": "total_dpk", "label": "TOTAL DPK", "category": "DPK", "level": 1, "is_bold": True, "is_link": True, "parent_slug": "cat_dpk"},
+        {"slug": "giro", "label": "GIRO", "category": "DPK", "level": 2, "is_bold": True, "parent_slug": "total_dpk"},
+        {"slug": "giro_pemda", "label": "GIRO PEMDA", "category": "DPK", "level": 3, "parent_slug": "giro"},
+        {"slug": "giro_swasta_lembaga", "label": "GIRO SWASTA LEMBAGA", "category": "DPK", "level": 3, "parent_slug": "giro"},
+        {"slug": "giro_perorangan", "label": "GIRO PERORANGAN", "category": "DPK", "level": 3, "parent_slug": "giro"},
+        {"slug": "tabungan", "label": "TABUNGAN", "category": "DPK", "level": 2, "is_bold": True, "parent_slug": "total_dpk"},
+        {"slug": "deposito", "label": "DEPOSITO", "category": "DPK", "level": 2, "is_bold": True, "parent_slug": "total_dpk"},
+        {"slug": "deposito_pemda", "label": "DEPOSITO PEMDA", "category": "DPK", "level": 3, "parent_slug": "deposito"},
+        {"slug": "deposito_swasta_lembaga", "label": "DEPOSITO SWASTA LEMBAGA", "category": "DPK", "level": 3, "parent_slug": "deposito"},
+        {"slug": "deposito_perorangan", "label": "DEPOSITO PERORANGAN", "category": "DPK", "level": 3, "parent_slug": "deposito"},
+        {"slug": "casa", "label": "CASA", "category": "DPK", "level": 2, "parent_slug": "total_dpk"},
+        
+        # KREDIT ROOT
+        {"slug": "cat_kredit", "label": "PENYALURAN DANA (KREDIT)", "category": "KREDIT", "level": 0, "is_bold": True},
+        {"slug": "kredit", "label": "KREDIT", "category": "KREDIT", "level": 1, "is_bold": True, "parent_slug": "cat_kredit"},
+        {"slug": "tlf", "label": "TLF", "category": "KREDIT", "level": 2, "parent_slug": "kredit"},
+        {"slug": "konsumer", "label": "KONSUMER", "category": "KREDIT", "level": 2, "parent_slug": "kredit"},
+        {"slug": "korporasi", "label": "KORPORASI", "category": "KREDIT", "level": 2, "parent_slug": "kredit"},
+        {"slug": "mikro", "label": "MIKRO", "category": "KREDIT", "level": 2, "parent_slug": "kredit"},
+        {"slug": "ritel", "label": "RITEL", "category": "KREDIT", "level": 2, "parent_slug": "kredit"},
+        {"slug": "menengah", "label": "MENENGAH", "category": "KREDIT", "level": 2, "parent_slug": "kredit"},
+        {"slug": "pembiayaan", "label": "PEMBIAYAAN", "category": "KREDIT", "level": 2, "parent_slug": "kredit"},
+        
+        # LABA RUGI ROOT
+        {"slug": "cat_lr", "label": "LABA RUGI", "category": "Laba Rugi", "level": 0, "is_bold": True},
+        {"slug": "pend_bunga", "label": "PEND BUNGA", "category": "Laba Rugi", "level": 1, "parent_slug": "cat_lr"},
+        {"slug": "by_bunga", "label": "BY BUNGA", "category": "Laba Rugi", "level": 1, "parent_slug": "cat_lr"},
+        {"slug": "pend_ops_selain_bunga", "label": "PEND OPS SELAIN BUNGA", "category": "Laba Rugi", "level": 1, "parent_slug": "cat_lr"},
+        {"slug": "by_ops_selain_bunga", "label": "BY OPS SELAIN BUNGA", "category": "Laba Rugi", "level": 1, "parent_slug": "cat_lr"},
+        {"slug": "pend_non_ops", "label": "PEND NON OPS", "category": "Laba Rugi", "level": 1, "parent_slug": "cat_lr"},
+        {"slug": "by_non_ops", "label": "BY NON OPS", "category": "Laba Rugi", "level": 1, "parent_slug": "cat_lr"},
+        {"slug": "laba_rugi_sebelum_pajak", "label": "LABA RUGI SEBELUM PAJAK", "category": "Laba Rugi", "level": 1, "is_bold": True, "parent_slug": "cat_lr"},
+        {"slug": "laba_rugi_bersih", "label": "LABA RUGI BERSIH", "category": "Laba Rugi", "level": 1, "is_bold": True, "parent_slug": "cat_lr"},
+
+        # ASET ROOT
+        {"slug": "cat_aset", "label": "ASET", "category": "ASET", "level": 0, "is_bold": True},
+        {"slug": "total_aset", "label": "TOTAL ASET", "category": "ASET", "level": 1, "is_bold": True, "parent_slug": "cat_aset"},
+        {"slug": "total_ckpn_kredit", "label": "TOTAL CKPN KREDIT", "category": "ASET", "level": 2, "parent_slug": "total_aset"},
+        {"slug": "total_ckpn_pembiayaan", "label": "TOTAL CKPN PEMBIAYAAN", "category": "ASET", "level": 2, "parent_slug": "total_aset"},
+
+        # RATIO ROOT
+        {"slug": "cat_ratio", "label": "RATIO", "category": "RATIO", "level": 0, "is_bold": True},
+        {"slug": "npl", "label": "NPL (%)", "category": "RATIO", "level": 1, "is_bold": True, "is_ratio": True, "parent_slug": "cat_ratio"},
+        {"slug": "npf", "label": "NPF (%)", "category": "RATIO", "level": 1, "is_bold": True, "is_ratio": True, "parent_slug": "cat_ratio"},
+        {"slug": "roa", "label": "ROA (%)", "category": "RATIO", "level": 1, "is_bold": True, "is_ratio": True, "parent_slug": "cat_ratio"},
+        {"slug": "nim", "label": "NIM (%)", "category": "RATIO", "level": 1, "is_bold": True, "is_ratio": True, "parent_slug": "cat_ratio"},
+        {"slug": "bopo", "label": "BOPO (%)", "category": "RATIO", "level": 1, "is_bold": True, "is_ratio": True, "parent_slug": "cat_ratio"},
+        {"slug": "ldr", "label": "LDR (%)", "category": "RATIO", "level": 1, "is_bold": True, "is_ratio": True, "parent_slug": "cat_ratio"},
+        {"slug": "fdr", "label": "FDR (%)", "category": "RATIO", "level": 1, "is_bold": True, "is_ratio": True, "parent_slug": "cat_ratio"},
+    ]
+
+
+    stored_inds = {}
+    for ind_in in indicators:
+        q = select(FinancialIndicator).where(FinancialIndicator.slug == ind_in["slug"])
+        result = await db.execute(q)
+        ind = result.scalars().first()
+        
+        parent_id = None
+        if "parent_slug" in ind_in:
+            parent_id = stored_inds[ind_in["parent_slug"]].id
+
+        if not ind:
+            ind = FinancialIndicator(
+                slug=ind_in["slug"],
+                label=ind_in["label"],
+                category=ind_in["category"],
+                level=ind_in["level"],
+                is_bold=ind_in.get("is_bold", False),
+                is_link=ind_in.get("is_link", False),
+                is_ratio=ind_in.get("is_ratio", False),
+                parent_id=parent_id
+            )
+            db.add(ind)
+            await db.flush()
+        stored_inds[ind_in["slug"]] = ind
+
+    # 2. Financial Metrics Seed (Mock historical data)
+    from datetime import date, timedelta
+    today = date(2026, 3, 14)
+
+    metrics_data = [
+        {"slug": "total_dpk", "val": 9420, "target": 11000, "dtd": 45, "mtd": 120, "ytd": 540},
+        {"slug": "giro", "val": 4120, "target": 4500, "dtd": 5, "mtd": -12, "ytd": 210},
+        {"slug": "kredit", "val": 5340, "target": 5500, "dtd": 15, "mtd": 45, "ytd": 280},
+        {"slug": "npl", "val": 1.21, "target": 1.50, "dtd": 0.01, "mtd": 0.03, "ytd": 0.15},
+    ]
+
+    for m_in in metrics_data:
+        q = select(FinancialMetric).where(
+            FinancialMetric.indicator_id == stored_inds[m_in["slug"]].id,
+            FinancialMetric.report_date == today
+        )
+        result = await db.execute(q)
+        metric = result.scalars().first()
+        if not metric:
+            metric = FinancialMetric(
+                indicator_id=stored_inds[m_in["slug"]].id,
+                report_date=today,
+                value=m_in["val"],
+                target_nominal=m_in["target"],
+                dtd_nominal=m_in["dtd"],
+                dtd_pct=round((m_in["dtd"] / (m_in["val"] - m_in["dtd"]) * 100), 2) if m_in["val"] != m_in["dtd"] else 0,
+                mtd_nominal=m_in["mtd"],
+                mtd_pct=round((m_in["mtd"] / (m_in["val"] - m_in["mtd"]) * 100), 2) if m_in["val"] != m_in["mtd"] else 0,
+                ytd_nominal=m_in["ytd"],
+                ytd_pct=round((m_in["ytd"] / (m_in["val"] - m_in["ytd"]) * 100), 2) if m_in["val"] != m_in["ytd"] else 0,
+            )
+            db.add(metric)
+    
+    await db.commit()
+    print("Financial seeding completed successfully!")
 
 async def main():
     async with AsyncSessionLocal() as db:
         await seed_data(db)
+        await seed_financial_data(db)
 
 if __name__ == "__main__":
     asyncio.run(main())

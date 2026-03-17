@@ -10,3 +10,4 @@ from app.models.engine import (
 from app.models.role_permission import Role, Permission, ModelHasRole, RoleHasPermission
 from app.models.imports import FileImport
 from app.models.activity_log import ActivityLog
+from app.models.tableau import FactKinerjaPrc

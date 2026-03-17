@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { RefreshCw, Download, Search } from 'lucide-react';
-import { SearchableSelect } from '../../../components/ui/SearchableSelect';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 
 // ─── Filter options ──────────────────────────────────────────────────────────
 const ENGINE_OPTIONS = [

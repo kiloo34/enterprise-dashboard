@@ -4,7 +4,7 @@ import React from 'react';
 import { X, Clock, Database, AlertCircle, Layers, Hash, Server, Activity } from 'lucide-react';
 import { EngineLog, LogLevel } from './EngineLogTable';
 import { clsx } from 'clsx';
-import { useFocusTrap } from '../../../hooks/useFocusTrap';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 const LEVEL_COLORS: Record<LogLevel, string> = {
     ERROR: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',

@@ -1,7 +1,7 @@
 "use client";
 
-import { Skeleton } from "../../../components/ui/Skeleton";
-import { MetricCardSkeleton } from "../../../components/dashboard/MetricCardSkeleton";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { MetricCardSkeleton } from "@/components/dashboard/MetricCardSkeleton";
 
 export default function QRISLoading() {
     return (

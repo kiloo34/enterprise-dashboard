@@ -135,3 +135,49 @@ async def get_daily_analysis(db: AsyncSession, date: str, network: str) -> Daily
             'analysis': analysis.strip()
         }
     )
+
+async def get_qris_transactions(db: AsyncSession, limit: int = 100) -> list:
+    query = select(RekonQrisAj).order_by(RekonQrisAj.transaction_date.desc()).limit(limit)
+    result = await db.execute(query)
+    rows = result.scalars().all()
+    return [
+        {
+            "id": r.id_row,
+            "timestamp": r.transaction_date,
+            "merchant": "QRIS Merchant",
+            "nominal": float(r.transaction_amount or 0),
+            "bankStatus": "SUCCESS" if r.is_cbs else "FAILED",
+            "artajasaStatus": "SUCCESS" if r.status_rekon == 'MATCH' else "PENDING",
+            "reconStatus": r.status_rekon or "UNMATCHED"
+        } for r in rows
+    ]
+
+async def get_onus_transactions(db: AsyncSession, limit: int = 100) -> list:
+    query = select(RekonQrisOnus).order_by(RekonQrisOnus.transaction_date.desc()).limit(limit)
+    result = await db.execute(query)
+    rows = result.scalars().all()
+    return [
+        {
+            "id": r.ref_core,
+            "timestamp": r.transaction_date,
+            "merchant": r.merchant_name or "N/A",
+            "nominal": float(r.transaction_amount or 0),
+            "bankStatus": "SUCCESS" if r.is_cbs else "FAILED",
+            "reconStatus": r.status_rekon or "UNMATCHED"
+        } for r in rows
+    ]
+
+async def get_rintis_transactions(db: AsyncSession, limit: int = 100) -> list:
+    query = select(RekonQrisRintis).order_by(RekonQrisRintis.transaction_date.desc()).limit(limit)
+    result = await db.execute(query)
+    rows = result.scalars().all()
+    return [
+        {
+            "id": r.ref_core,
+            "timestamp": r.transaction_date,
+            "merchant": r.merchant_name or "N/A",
+            "nominal": float(r.transaction_amount or 0),
+            "bankStatus": "SUCCESS" if r.is_cbs else "FAILED",
+            "reconStatus": r.status_rekon or "UNMATCHED"
+        } for r in rows
+    ]

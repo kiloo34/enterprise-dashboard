@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
-import { roleApi } from '../../../../utils/api/roleApi';
-import { Role, Permission, RoleFormData } from '../../../../types/role';
-import { useAuth } from '../../../../components/AuthContext';
-import { useTranslation } from '../../../../hooks/useTranslation';
+import { roleApi } from '@/utils/api/roleApi';
+import { Role, Permission, RoleFormData } from '@/types/role';
+import { useAuth } from '@/components/AuthContext';
+import { useTranslation } from '@/hooks/useTranslation';
 import { toast } from 'sonner';
 
 export function useRoleManagement() {

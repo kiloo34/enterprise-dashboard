@@ -1,6 +1,5 @@
-import React from "react";
-import { MetricCardSkeleton } from "../../../components/dashboard/MetricCardSkeleton";
-import { Skeleton } from "../../../components/ui/Skeleton";
+import { MetricCardSkeleton } from "@/components/dashboard/MetricCardSkeleton";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export default function DashboardLoading() {
     return (

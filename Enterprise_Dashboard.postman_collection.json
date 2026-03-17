@@ -1,0 +1,244 @@
+{
+  "info": {
+    "name": "Enterprise Dashboard API",
+    "description": "Koleksi API Endpoint lengkap untuk pengembangan Frontend Enterprise Dashboard v2. Mendukung autentikasi Bearer Token, manajemen peran (RBAC), monitoring transaksi QRIS, dan sistem Import Data rekonsiliasi yang berjalan di belakang Traefik Proxy.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "description": "Endpoint Autentikasi dan Manajemen Sesi",
+      "item": [
+        {
+          "name": "User Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@enterprise.local\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/login",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Users & Settings",
+      "description": "Endpoint Informasi Profil dan Pengaturan UI",
+      "item": [
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/users",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "users"]
+            }
+          }
+        },
+        {
+          "name": "Update UI Settings (Sidebar State)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ui_settings\": {\n    \"sidebar_collapsed\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/users/settings",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "users", "settings"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Engine & Data Import (Recon API)",
+      "description": "Endpoint Sistem Rekonsiliasi, Upload File Masif, dan Monitoring Celery Worker.",
+      "item": [
+        {
+          "name": "Upload CSV/TXT Data (Priority Support)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/sample.csv"
+                },
+                {
+                  "key": "target_table",
+                  "value": "app.engine_sts_proses_rpt_his",
+                  "type": "text"
+                },
+                {
+                  "key": "priority",
+                  "value": "5",
+                  "type": "text",
+                  "description": "0 = Normal, 5 = Tinggi, 9 = Mendesak (Akan melompati antrean Redis)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/recon/imports/upload",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "recon", "imports", "upload"]
+            }
+          }
+        },
+        {
+          "name": "Get Live Import History Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/recon/imports",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "recon", "imports"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Dashboard Data Analytics",
+      "description": "Endpoint Statistik Transaksi, Ratio Keuangan, dan Analisa Harian.",
+      "item": [
+        {
+          "name": "Get Financial Metrics (Tingkat Direksi)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/dashboard/financial?category=KREDIT",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "dashboard", "financial"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "KREDIT",
+                  "description": "Bisa DPK, KREDIT, RATIO, dll."
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get QRIS AJ Summary Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/recon/dashboard/qris-stats",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "recon", "dashboard", "qris-stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Rintis Summary Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/recon/dashboard/rintis-stats",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "recon", "dashboard", "rintis-stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Txs Lists (QRIS)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/recon/dashboard/qris-transactions?limit=100",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "recon", "dashboard", "qris-transactions"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost",
+      "type": "string"
+    },
+    {
+      "key": "ACCESS_TOKEN",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    }
+  ]
+}

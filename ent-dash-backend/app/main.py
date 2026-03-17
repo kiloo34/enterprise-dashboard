@@ -16,15 +16,13 @@ def create_app() -> FastAPI:
     # We use allow_origin_regex to cover all local dev ports, and list known remote origins.
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
+        allow_origins=["*"] if settings.DEBUG else [
             "http://localhost:3000",
             "http://127.0.0.1:3000",
             "http://localhost:8080",
             "http://localhost",
-            "http://172.20.10.4",
-            "http://172.20.10.4:3000",
         ],
-        allow_origin_regex=r"http://(localhost|127\.0\.0\.1|172\.20\.10\.4)(:\d+)?",
+        allow_origin_regex=r"http://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?",
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         allow_headers=["*"],

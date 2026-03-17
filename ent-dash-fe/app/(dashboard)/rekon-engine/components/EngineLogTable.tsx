@@ -3,7 +3,7 @@
 import React from 'react';
 import { ExternalLink } from 'lucide-react';
 import { clsx } from 'clsx';
-import { DataTable, DataTableColumn } from '../../../components/ui/DataTable';
+import { DataTable, DataTableColumn } from '@/components/ui/DataTable';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type LogLevel = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';

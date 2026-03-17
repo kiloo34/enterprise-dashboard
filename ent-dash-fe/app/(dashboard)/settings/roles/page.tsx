@@ -4,16 +4,16 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 import { Shield, Plus } from 'lucide-react';
 import { useRoleManagement } from './hooks/useRoleManagement';
-import { useTranslation } from '../../../hooks/useTranslation';
-import { RoleTable } from '../../../components/roles/RoleTable';
-import { RoleSearchBar } from '../../../components/roles/RoleSearchBar';
-import { PageHeader } from '../../../components/ui/PageHeader';
-import { DeleteConfirmationModal } from '../../../components/ui/DeleteConfirmationModal';
-import { PageError } from '../../../components/ui/PageError';
+import { useTranslation } from '@/hooks/useTranslation';
+import { RoleTable } from '@/components/roles/RoleTable';
+import { RoleSearchBar } from '@/components/roles/RoleSearchBar';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { DeleteConfirmationModal } from '@/components/ui/DeleteConfirmationModal';
+import { PageError } from '@/components/ui/PageError';
 
 // ✦ Lazy-load the heavy RoleForm (contains permission tree + react-hook-form + zod)
 const RoleForm = dynamic(
-    () => import('../../../components/roles/RoleForm').then(m => ({ default: m.RoleForm })),
+    () => import('@/components/roles/RoleForm').then(m => ({ default: m.RoleForm })),
     { ssr: false, loading: () => null }
 );
 

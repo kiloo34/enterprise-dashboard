@@ -1,7 +1,7 @@
 import React from 'react';
-import { User } from '../../../../types/user';
+import { User } from '@/types/user';
 import { Edit2, Trash2, ListTodo } from 'lucide-react';
-import { DataTable, DataTableColumn } from '../../../../components/ui/DataTable';
+import { DataTable, DataTableColumn } from '@/components/ui/DataTable';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 interface UserTableTranslations {

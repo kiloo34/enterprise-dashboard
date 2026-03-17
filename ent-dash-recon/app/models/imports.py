@@ -16,6 +16,7 @@ class FileImport(Base):
     total_rows = Column(BigInteger, default=0)
     processed_rows = Column(BigInteger, default=0)
     failed_rows = Column(BigInteger, default=0)
+    priority = Column(BigInteger, default=0)
     status = Column(String(50), default="pending")
     
     error_log = Column(JSON, nullable=True)

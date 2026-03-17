@@ -1,6 +1,6 @@
 import React from 'react';
 import { Users, Plus } from 'lucide-react';
-import { PageHeader } from '../../../../components/ui/PageHeader';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface UserHeaderTranslations {
     title: string;

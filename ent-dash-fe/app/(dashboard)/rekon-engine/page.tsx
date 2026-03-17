@@ -3,12 +3,12 @@
 import React, { useState, useCallback } from 'react';
 import useSWR from 'swr';
 import { Database } from 'lucide-react';
-import { PageHeader } from '../../components/ui/PageHeader';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { EngineLogStats } from './components/EngineLogStats';
 import { EngineLogFilters } from './components/EngineLogFilters';
 import { EngineLogTable, EngineLog } from './components/EngineLogTable';
 import { EngineLogDetailModal } from './components/EngineLogDetailModal';
-import { api } from '@/app/utils/api';
+import { api } from '@/utils/api';
 
 // ─── Time range selector options ─────────────────────────────────────────────
 const TIME_RANGES = [
@@ -42,7 +42,7 @@ export default function RekonEnginePage() {
         isValidating: isRefreshing,
         mutate: mutateLogs
     } = useSWR<EngineLog[]>(
-        `api/engine/monitor/logs?${queryParams}`,
+        `api/recon/engine/monitor/logs?${queryParams}`,
         (url) => api<EngineLog[]>(url).then(res => res || []),
         { refreshInterval: liveTail ? 5000 : 0 }
     );
@@ -51,7 +51,7 @@ export default function RekonEnginePage() {
         data: statsData,
         mutate: mutateStats
     } = useSWR(
-        'api/engine/monitor/stats',
+        'api/recon/engine/monitor/stats',
         (url) => api<any>(url).then(res => res || {}),
         { refreshInterval: liveTail ? 10000 : 0 }
     );

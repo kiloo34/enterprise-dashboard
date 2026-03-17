@@ -1,4 +1,4 @@
-import { ErrorState } from "./components/ui/ErrorState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import Link from "next/link";
 import { Home } from "lucide-react";
 

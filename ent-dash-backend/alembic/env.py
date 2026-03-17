@@ -6,6 +6,7 @@ from logging.config import fileConfig
 # Add the parent directory to sys.path so we can import our app modules
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
 
+import sqlalchemy as sa
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
@@ -13,7 +14,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 from app.core.config import settings
-from app.db.base import Base
+from app.models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -61,10 +62,27 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def include_object(object, name, type_, reflected, compare_to):
+    if type_ == "table":
+        # Only manage tables in our core application schemas
+        # We exclude TABLEAU_REPORT and public as they are usually external or read-only targets
+        return object.schema in ["app", "rekon"]
+    return True
+
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection, 
+        target_metadata=target_metadata,
+        include_schemas=True,
+        include_object=include_object,
+        version_table_schema="app"  # Keep alembic version in app schema
+    )
 
     with context.begin_transaction():
+        # Ensure schemas exist
+        connection.execute(sa.text('CREATE SCHEMA IF NOT EXISTS "app"'))
+        connection.execute(sa.text('CREATE SCHEMA IF NOT EXISTS "rekon"'))
+        connection.execute(sa.text('CREATE SCHEMA IF NOT EXISTS "TABLEAU_REPORT"'))
         context.run_migrations()
 
 

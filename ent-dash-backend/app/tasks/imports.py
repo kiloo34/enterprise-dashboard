@@ -4,6 +4,7 @@ import asyncio
 from app.worker import celery_app
 from app.db.session import AsyncSessionLocal
 from sqlalchemy import text
+from app.services.financial_sync import sync_metrics_from_fact_kinerja
 
 
 @celery_app.task(bind=True, name="tasks.process_csv_import", max_retries=3)
@@ -16,15 +17,23 @@ def process_csv_import(self, import_id: str, file_path: str, target_table: str):
 
 async def _process_csv(import_id: str, file_path: str, target_table: str):
     async with AsyncSessionLocal() as db:
-        # Prepend 'rekon.' if it's one of the known engine tables and lacks a schema
+        # Prepend schema if it lacks one
         engine_tables = [
             "engine_sts_load_data", "engine_sts_load_data_his",
             "engine_sts_proses_rpt", "engine_sts_proses_rpt_his",
             "rekon_qris_aj", "rekon_qris_onus", "rekon_qris_rintis",
             "engine_job_log", "engine_job_entry_log"
         ]
-        if target_table in engine_tables:
-            target_table = f"rekon.{target_table}"
+        
+        if "." not in target_table:
+            if target_table in engine_tables:
+                target_table = f"rekon.{target_table}"
+            elif target_table == "fact_kinerjaprc":
+                target_table = f'"TABLEAU_REPORT".{target_table}'
+        elif target_table.startswith("TABLEAU_REPORT."):
+            # Handle the case where frontend sends it with dot
+            table_name = target_table.split(".")[-1]
+            target_table = f'"TABLEAU_REPORT".{table_name}'
 
         # Mark as processing
         try:
@@ -85,6 +94,10 @@ async def _process_csv(import_id: str, file_path: str, target_table: str):
                     ok, fail = await _bulk_insert(db, target_table, rows)
                     processed_rows += ok
                     failed_rows += fail
+
+            # If it's the financial table, trigger a sync to the dashboard metrics
+            if target_table == '"TABLEAU_REPORT".fact_kinerjaprc':
+                await sync_metrics_from_fact_kinerja(db)
 
             final_status = "completed" if failed_rows == 0 else "partial"
             await db.execute(

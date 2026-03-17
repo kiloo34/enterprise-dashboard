@@ -1,13 +1,17 @@
+"use client";
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/Card';
-import { FileUploader } from '@/app/components/ui/FileUploader';
-import { SearchableSelect } from '@/app/components/ui/SearchableSelect';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { FileUploader } from '@/components/ui/FileUploader';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 
 interface ImportConfigCardProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     t: Record<string, any>;
     targetTable: string;
     setTargetTable: (val: string) => void;
+    priority: number;
+    setPriority: (val: number) => void;
     file: File | null;
     setFile: (file: File | null) => void;
     isUploading: boolean;
@@ -19,6 +23,8 @@ export function ImportConfigCard({
     t,
     targetTable,
     setTargetTable,
+    priority,
+    setPriority,
     file,
     setFile,
     isUploading,
@@ -43,19 +49,37 @@ export function ImportConfigCard({
                         </label>
                         <SearchableSelect
                             options={[
-                                { value: "engine_job_entry_log", label: t.tables.engine_job_entry_log },
-                                { value: "engine_job_log", label: t.tables.engine_job_log },
-                                { value: "engine_process_group", label: t.tables.engine_process_group },
-                                { value: "engine_process_group_his", label: t.tables.engine_process_group_his },
-                                { value: "engine_sts_load_data", label: t.tables.engine_sts_load_data },
-                                { value: "engine_sts_load_data_his", label: t.tables.engine_sts_load_data_his },
-                                { value: "engine_sts_proses_rpt", label: t.tables.engine_sts_proses_rpt },
-                                { value: "engine_sts_proses_rpt_his", label: t.tables.engine_sts_proses_rpt_his }
+                                { value: "rekon.rekon_qris_aj", label: t.tables.rekon_qris_aj || "Rekon QRIS AJ", group: t.schemas.rekon },
+                                { value: "rekon.rekon_qris_onus", label: t.tables.rekon_qris_onus || "Rekon QRIS On-us", group: t.schemas.rekon },
+                                { value: "rekon.rekon_qris_rintis", label: t.tables.rekon_qris_rintis || "Rekon QRIS Rintis", group: t.schemas.rekon },
+                                { value: "engine_job_entry_log", label: t.tables.engine_job_entry_log, group: t.schemas.rekon },
+                                { value: "engine_job_log", label: t.tables.engine_job_log, group: t.schemas.rekon },
+                                { value: "engine_sts_load_data", label: t.tables.engine_sts_load_data, group: t.schemas.rekon },
+                                { value: "engine_sts_proses_rpt", label: t.tables.engine_sts_proses_rpt, group: t.schemas.rekon },
+                                { value: "TABLEAU_REPORT.fact_kinerjaprc", label: t.tables.fact_kinerjaprc, group: t.schemas.tableau }
                             ]}
                             value={targetTable}
                             onChange={setTargetTable}
                             placeholder="Pilih target tabel..."
                             searchPlaceholder="Cari tabel..."
+                            disabled={isUploading}
+                        />
+                    </div>
+                    
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 mt-2">
+                            Prioritas Import
+                        </label>
+                        <SearchableSelect
+                            options={[
+                                { value: "0", label: "Normal (0)" },
+                                { value: "5", label: "Tinggi (5)" },
+                                { value: "9", label: "Mendesak (9)" }
+                            ]}
+                            value={priority.toString()}
+                            onChange={(val) => setPriority(parseInt(val, 10) || 0)}
+                            placeholder="Pilih prioritas..."
+                            searchPlaceholder="Cari prioritas..."
                             disabled={isUploading}
                         />
                     </div>

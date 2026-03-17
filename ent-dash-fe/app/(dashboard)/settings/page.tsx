@@ -2,11 +2,11 @@
 
 import React from "react";
 import { Monitor, Moon, Sun, Layout, Maximize2, Minimize2, Check, ShieldCheck } from "lucide-react";
-import { useSettings } from "../../components/SettingsContext";
-import { useTranslation } from "../../hooks/useTranslation";
-import { Theme, Size, Language } from "../../types";
+import { useSettings } from "@/components/SettingsContext";
+import { useTranslation } from "@/hooks/useTranslation";
+import { Theme, Size, Language } from "@/types";
 import clsx from "clsx";
-import { PageHeader } from "../../components/ui/PageHeader";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 export default function SettingsPage() {
     const { theme, setTheme, size, setSize, language, setLanguage } = useSettings();

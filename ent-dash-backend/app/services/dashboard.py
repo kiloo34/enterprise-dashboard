@@ -1,6 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from typing import List, Optional, Any
 from app.models.rekon import RekonQrisAj, RekonQrisOnus, RekonQrisRintis
+from app.models.dashboard import FinancialMetric, FinancialIndicator
 from app.schemas.dashboard import QrisStatsResponseDto, DailyAnalysisResponseDto
 import httpx
 import os
@@ -135,3 +137,94 @@ async def get_daily_analysis(db: AsyncSession, date: str, network: str) -> Daily
             'analysis': analysis.strip()
         }
     )
+
+async def get_financial_dashboard(db: AsyncSession, category: Optional[str] = None) -> List[Any]:
+    # 1. Find the latest report date
+    latest_date_result = await db.execute(select(func.max(FinancialMetric.report_date)))
+    latest_date = latest_date_result.scalar()
+    
+    # 2. Fetch ALL indicators and left join with metrics for that date
+    # This ensures Root categories and leaf nodes without data still appear
+    from sqlalchemy.orm import joinedload
+    from sqlalchemy import and_
+    
+    query = (
+        select(FinancialIndicator, FinancialMetric)
+        .outerjoin(
+            FinancialMetric,
+            and_(
+                FinancialMetric.indicator_id == FinancialIndicator.id,
+                FinancialMetric.report_date == latest_date
+            )
+        )
+        .order_by(FinancialIndicator.category, FinancialIndicator.order_index)
+    )
+    
+    if category:
+        query = query.where(FinancialIndicator.category == category)
+        
+    result = await db.execute(query)
+    rows = result.all()
+    
+    output = []
+    for ind, met in rows:
+        if met:
+            output.append(met)
+        else:
+            # Create a mock metric object for indicators without data on this date
+            # This is primarily for Root categories so they show up in grouped views
+            output.append(FinancialMetric(
+                indicator=ind,
+                report_date=latest_date,
+                value=None,
+                target_nominal=None
+            ))
+            
+    return output
+
+async def get_qris_transactions(db: AsyncSession, limit: int = 100) -> List[Any]:
+    query = select(RekonQrisAj).order_by(RekonQrisAj.transaction_date.desc()).limit(limit)
+    result = await db.execute(query)
+    rows = result.scalars().all()
+    # Map to DTO-compatible objects
+    return [
+        {
+            "id": r.id_row,
+            "timestamp": r.transaction_date,
+            "merchant": "QRIS Merchant", # Placeholder as real model lacks merchant name
+            "nominal": float(r.transaction_amount or 0),
+            "bankStatus": "SUCCESS" if r.is_cbs else "FAILED",
+            "artajasaStatus": "SUCCESS" if r.status_rekon == 'MATCH' else "PENDING",
+            "reconStatus": r.status_rekon or "UNMATCHED"
+        } for r in rows
+    ]
+
+async def get_onus_transactions(db: AsyncSession, limit: int = 100) -> List[Any]:
+    query = select(RekonQrisOnus).order_by(RekonQrisOnus.transaction_date.desc()).limit(limit)
+    result = await db.execute(query)
+    rows = result.scalars().all()
+    return [
+        {
+            "id": r.ref_core,
+            "timestamp": r.transaction_date,
+            "merchant": r.merchant_name or "N/A",
+            "nominal": float(r.transaction_amount or 0),
+            "bankStatus": "SUCCESS" if r.is_cbs else "FAILED",
+            "reconStatus": r.status_rekon or "UNMATCHED"
+        } for r in rows
+    ]
+
+async def get_rintis_transactions(db: AsyncSession, limit: int = 100) -> List[Any]:
+    query = select(RekonQrisRintis).order_by(RekonQrisRintis.transaction_date.desc()).limit(limit)
+    result = await db.execute(query)
+    rows = result.scalars().all()
+    return [
+        {
+            "id": r.ref_core,
+            "timestamp": r.transaction_date,
+            "merchant": r.merchant_name or "N/A",
+            "nominal": float(r.transaction_amount or 0),
+            "bankStatus": "SUCCESS" if r.is_cbs else "FAILED",
+            "reconStatus": r.status_rekon or "UNMATCHED"
+        } for r in rows
+    ]

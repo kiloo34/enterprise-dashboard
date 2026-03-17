@@ -22,18 +22,22 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    print(f"Token received: {token[:10]}...")
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         user_id: str = payload.get("sub")
         if user_id is None:
+            print("JWT valid but user_id is None")
             raise credentials_exception
-    except JWTError:
+    except JWTError as e:
+        print(f"JWT decode failed: {e}. Secret: {settings.SECRET_KEY[:10]}...")
         raise credentials_exception
     
     result = await db.execute(select(User).where(User.id == int(user_id)))
     user = result.scalars().first()
     if user is None:
+        print(f"User {user_id} not found in DB")
         raise credentials_exception
     return user

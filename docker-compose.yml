@@ -47,6 +47,7 @@ services:
       - POSTGRES_DB=ent-dash
       - POSTGRES_PORT=5432
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - SECRET_KEY=${SECRET_KEY:-base64:8C1LsxaMh5a+r++t8oTD0iQllugGC8CF7iWam/Tfaww=}
       - CELERY_BROKER_URL=redis://redis:6379/0
     depends_on:
       - redis
@@ -71,13 +72,16 @@ services:
       - POSTGRES_DB=ent-dash
       - POSTGRES_PORT=5432
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - SECRET_KEY=${SECRET_KEY:-base64:8C1LsxaMh5a+r++t8oTD0iQllugGC8CF7iWam/Tfaww=}
       - CELERY_BROKER_URL=redis://redis:6379/0
+    volumes:
+      - recon_uploads:/app/storage/app/imports
     depends_on:
       - redis
       - db
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.recon.rule=PathPrefix(`/api/imports`)"
+      - "traefik.http.routers.recon.rule=PathPrefix(`/api/recon`)"
       - "traefik.http.routers.recon.entrypoints=web"
       - "traefik.http.routers.recon.priority=40"
     restart: always
@@ -95,7 +99,10 @@ services:
       - POSTGRES_PASSWORD=pekalongan12
       - POSTGRES_DB=ent-dash
       - POSTGRES_PORT=5432
+      - SECRET_KEY=${SECRET_KEY:-base64:8C1LsxaMh5a+r++t8oTD0iQllugGC8CF7iWam/Tfaww=}
       - CELERY_BROKER_URL=redis://redis:6379/0
+    volumes:
+      - recon_uploads:/app/storage/app/imports
     depends_on:
       - redis
       - db
@@ -105,10 +112,12 @@ services:
     build:
       context: ./ent-dash-fe
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=/api
     image: ent-dash-frontend:latest
     container_name: ent_dash_frontend
     environment:
-      - NEXT_PUBLIC_API_URL=http://172.20.10.4/api
+      - NEXT_PUBLIC_API_URL=/api
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
@@ -118,3 +127,7 @@ services:
 
 volumes:
   pgdata:
+    external: true
+    name: enterprisedashboard_pgdata
+  recon_uploads:
+    name: ent_dash_recon_uploads

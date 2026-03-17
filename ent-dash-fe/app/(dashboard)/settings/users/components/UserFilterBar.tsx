@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search } from 'lucide-react';
-import { Role, OrganizationUnit } from '../../../../types/user';
-import { SearchableSelect } from '../../../../components/ui/SearchableSelect';
+import { Role, OrganizationUnit } from '@/types/user';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 
 interface UserFilterBarTranslations {
     searchPlaceholder: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useTranslation } from "@/app/hooks/useTranslation";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function EngineMonitoringReconciliationPage() {
     const t = useTranslation("Sidebar");
