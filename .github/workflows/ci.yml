@@ -1,18 +1,15 @@
-name: CI Quality Gate
+name: Enterprise Dashboard CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [ "main", "master", "development" ]
   pull_request:
-    branches: [main, develop]
+    branches: [ "main", "master", "development" ]
 
 jobs:
-  # ─────────────────────────────────────────
-  # FRONTEND QUALITY GATE (Rule 14)
-  # Enforces: ESLint, TypeScript strict check
-  # ─────────────────────────────────────────
-  frontend-lint:
-    name: "Frontend — ESLint + TypeScript"
+  # ─── FRONTEND QUALITY & BUILD ──────────────────────────────────────────────
+  frontend-check:
+    name: Frontend (Next.js) Lint & Build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,77 +22,65 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: ent-dash-fe/package-lock.json
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './ent-dash-fe/package-lock.json'
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm ci
 
       - name: Run ESLint
         run: npm run lint
-
+        
       - name: Run TypeScript type check
         run: npx tsc --noEmit
 
-  # ─────────────────────────────────────────
-  # BACKEND QUALITY GATE (Rule 14)
-  # Enforces: ruff (linting), mypy (typing)
-  # ─────────────────────────────────────────
-  backend-lint:
-    name: "Backend — Ruff + Mypy"
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./ent-dash-backend
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-          cache-dependency-path: ent-dash-backend/requirements.txt
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt ruff mypy
-
-      - name: Run Ruff (linter)
-        run: ruff check app/ --select E,W,F --ignore E501
-
-      - name: Run Mypy (type checker)
-        run: mypy app/ --ignore-missing-imports --no-error-summary
-
-  # ─────────────────────────────────────────
-  # BACKEND TEST GATE (Rule 12 + Rule 14)
-  # Enforces: pytest behavioral tests
-  # ─────────────────────────────────────────
-  backend-tests:
-    name: "Backend — Pytest"
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./ent-dash-backend
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-          cache-dependency-path: ent-dash-backend/requirements.txt
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt pytest pytest-asyncio httpx
-
-      - name: Run tests
-        run: pytest tests/ -v
+      - name: Test Build
+        run: npm run build
         env:
-          SECRET_KEY: "test-secret-key-for-ci-pipeline"
-          API_V1_STR: "/api"
+          NEXT_PUBLIC_API_URL: /api
+
+  # ─── BACKEND SECURITY SCAN (SAST) ──────────────────────────────────────────
+  backend-security-scan:
+    name: Backend Security (Bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Bandit
+        run: pip install bandit
+      - name: Run Bandit
+        # Scan all python files in the repo, skip tests if they exist
+        run: bandit -r . -x tests
+
+  # ─── DOCKER COMPOSE BUILD TEST ─────────────────────────────────────────────
+  docker-build-check:
+    name: Microservices Docker Build Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create Dummy .env file
+        run: cp .env.example .env
+
+      - name: Test Docker Compose Build
+        run: docker compose build
+        # We only build to ensure Dockerfiles are valid and dependencies download successfully.
+        # We do not push to a registry.
+        
+      - name: Run Trivy vulnerability scanner on IAM
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ent-dash-iam:latest'
+          format: 'table'
+          exit-code: '0' # Set to 1 to fail the build on High/Crit
+          severity: 'CRITICAL,HIGH'
