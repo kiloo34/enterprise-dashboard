@@ -16,47 +16,54 @@ import { FinancialMetric } from "@/services/FinancialService";
 
 interface DPKBreakdownChartsProps {
     data: FinancialMetric[];
+    dates?: string[];
 }
 
-export function DPKBreakdownCharts({ data }: DPKBreakdownChartsProps) {
+export function DPKBreakdownCharts({ data, dates = [] }: DPKBreakdownChartsProps) {
     const td = useTranslation("Dashboard");
     const tf = td.financial;
 
-    const dates = ["Oct 30", "Oct 31", "Nov 01", "Nov 02", "Nov 03"];
+    const chartDates = dates.length > 0 ? dates : ["Oct 30", "Oct 31", "Nov 01", "Nov 02", "Nov 03"];
 
     // Dynamic Data Mapping
     const chartData = useMemo(() => {
-        const getVal = (slug: string) => data.find(m => m.indicator.slug === slug)?.value || 0;
+        const getHistory = (slug: string) => {
+            const metric = data.find(m => m.indicator.slug.toLowerCase() === slug.toLowerCase());
+            if (!metric || !metric.history || metric.history.length === 0) {
+                return chartDates.map(() => 0);
+            }
+            return metric.history.map(v => v || 0);
+        };
         
-        const giroPemda = getVal("giro_pemda");
-        const giroSwasta = getVal("giro_swasta_lembaga");
-        const giroPerorangan = getVal("giro_perorangan");
-        const tabungan = getVal("tabungan");
-        const depoPemda = getVal("deposito_pemda");
-        const depoSwasta = getVal("deposito_swasta_lembaga");
-        const depoPerorangan = getVal("deposito_perorangan");
+        const giroPemdaHist = getHistory("giro_pemda");
+        const giroSwastaHist = getHistory("giro_swasta_lembaga");
+        const giroPeroranganHist = getHistory("giro_perorangan");
+        const tabunganHist = getHistory("tabungan");
+        const depoPemdaHist = getHistory("deposito_pemda");
+        const depoSwastaHist = getHistory("deposito_swasta_lembaga");
+        const depoPeroranganHist = getHistory("deposito_perorangan");
 
-        const giroTrend = dates.map((date, i) => ({
+        const giroTrend = chartDates.map((date, i) => ({
             date,
-            "Giro Pemda": i === 4 ? giroPemda : giroPemda * (0.9 + Math.random() * 0.2),
-            "Giro Swasta": i === 4 ? giroSwasta : giroSwasta * (0.9 + Math.random() * 0.2),
-            "Giro Perorangan": i === 4 ? giroPerorangan : giroPerorangan * (0.9 + Math.random() * 0.2),
+            "Giro Pemda": giroPemdaHist[i] || 0,
+            "Giro Swasta": giroSwastaHist[i] || 0,
+            "Giro Perorangan": giroPeroranganHist[i] || 0,
         }));
 
-        const tabunganTrend = dates.map((date, i) => ({
+        const tabunganTrend = chartDates.map((date, i) => ({
             date,
-            "Tabungan": i === 4 ? tabungan : tabungan * (0.9 + Math.random() * 0.2),
+            "Tabungan": tabunganHist[i] || 0,
         }));
 
-        const depositoTrend = dates.map((date, i) => ({
+        const depositoTrend = chartDates.map((date, i) => ({
             date,
-            "Deposito Pemda": i === 4 ? depoPemda : depoPemda * (0.9 + Math.random() * 0.2),
-            "Deposito Swasta": i === 4 ? depoSwasta : depoSwasta * (0.9 + Math.random() * 0.2),
-            "Deposito Perorangan": i === 4 ? depoPerorangan : depoPerorangan * (0.9 + Math.random() * 0.2),
+            "Deposito Pemda": depoPemdaHist[i] || 0,
+            "Deposito Swasta": depoSwastaHist[i] || 0,
+            "Deposito Perorangan": depoPeroranganHist[i] || 0,
         }));
 
         return { giroTrend, tabunganTrend, depositoTrend };
-    }, [data]);
+    }, [data, chartDates]);
 
     return (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">

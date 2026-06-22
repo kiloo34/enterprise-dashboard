@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth, Role } from "./AuthContext";
+import { useAuth, Role, getRedirectPath } from "./AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
@@ -12,7 +12,7 @@ interface ProtectedRouteProps {
      * If provided, only users whose unitCode matches this value can access the route.
      * Users with other unitCodes will be redirected to their own dashboard.
      */
-    requiredUnitCode?: string;
+    requiredUnitCodes?: string[];
     /**
      * PBAC Extension: If provided, only users whose positionName strictly matches
      * will be granted access (Bypassed if user is global admin)
@@ -20,14 +20,14 @@ interface ProtectedRouteProps {
     allowedPositions?: string[];
 }
 
-export function ProtectedRoute({ children, allowedRoles, requiredUnitCode, allowedPositions }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, allowedRoles, requiredUnitCodes, allowedPositions }: ProtectedRouteProps) {
     const { user, isAuthenticated, isLoading } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
     const isGlobalAdmin = user?.role === "super-admin" || user?.role === "admin";
     const isAuthorized = !isLoading && isAuthenticated && !!user &&
         (!allowedRoles || allowedRoles.includes(user.role)) &&
-        (!requiredUnitCode || user.unitCode === requiredUnitCode || isGlobalAdmin) &&
+        (!requiredUnitCodes || (user.unitCode && requiredUnitCodes.includes(user.unitCode)) || isGlobalAdmin) &&
         (!allowedPositions || (user.positionName && allowedPositions.includes(user.positionName)) || isGlobalAdmin);
 
     useEffect(() => {
@@ -49,31 +49,18 @@ export function ProtectedRoute({ children, allowedRoles, requiredUnitCode, allow
         // Bypass strict unitCode checking for global administrative roles
         const isGlobalAdmin = user.role === "super-admin" || user.role === "admin";
 
-        if (requiredUnitCode && user.unitCode !== requiredUnitCode && !isGlobalAdmin) {
-            if (user.unitCode === "DIR_UTAMA") {
-                router.push("/direksi/kinerja-keuangan");
-            } else if (user.unitCode === "DIV_OPS") {
-                router.push("/divisi-operasi/rekon-qris");
-            } else {
-                // super-admin or admin with no specific unit dashboard
-                router.push("/");
-            }
+        if (requiredUnitCodes && (!user.unitCode || !requiredUnitCodes.includes(user.unitCode)) && !isGlobalAdmin) {
+            router.push(getRedirectPath(user));
             return;
         }
 
         // 4. Position mismatch (PBAC) → block functional specialist from accessing management dashboards
         if (allowedPositions && (!user.positionName || !allowedPositions.includes(user.positionName)) && !isGlobalAdmin) {
-            if (user.unitCode === "DIR_UTAMA") {
-                router.push("/direksi/kinerja-keuangan");
-            } else if (user.unitCode === "DIV_OPS") {
-                router.push("/divisi-operasi/rekon-qris"); // Petugas (bukan VP) hanya bisa masuk sini
-            } else {
-                router.push("/");
-            }
+            router.push(getRedirectPath(user));
             return;
         }
 
-    }, [isAuthenticated, isLoading, user, allowedRoles, requiredUnitCode, allowedPositions, router, pathname]);
+    }, [isAuthenticated, isLoading, user, allowedRoles, requiredUnitCodes, allowedPositions, router, pathname]);
 
     if (!isAuthorized) {
         return (

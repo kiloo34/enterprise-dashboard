@@ -32,19 +32,19 @@ export function ImportConfigCard({
     handleUpload
 }: ImportConfigCardProps) {
     return (
-        <Card className="shadow-sm border-slate-200 dark:border-slate-800 border-none bg-slate-900 overflow-hidden relative isolate h-full min-h-[500px]">
+        <Card className="shadow-sm border overflow-hidden relative isolate h-full min-h-[500px] transition-all" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-indigo-500"></div>
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 dark:bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
-            <CardHeader className="pb-4 relative z-10 border-b border-white/5 mx-6 px-0 mt-2">
-                <CardTitle className="text-lg text-white font-medium">{t.configTitle}</CardTitle>
-                <CardDescription className="text-slate-400 text-xs mt-1">
+            <CardHeader className="pb-4 relative z-10 border-b mx-6 px-0 mt-2" style={{ borderColor: 'var(--card-border)' }}>
+                <CardTitle className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>{t.configTitle}</CardTitle>
+                <CardDescription className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                     {t.configDesc}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6 relative z-10">
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                        <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
                             {t.targetTable}
                         </label>
                         <SearchableSelect
@@ -67,7 +67,7 @@ export function ImportConfigCard({
                     </div>
                     
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 mt-2">
+                        <label className="block text-sm font-medium mb-1.5 mt-2" style={{ color: 'var(--text-primary)' }}>
                             Prioritas Import
                         </label>
                         <SearchableSelect

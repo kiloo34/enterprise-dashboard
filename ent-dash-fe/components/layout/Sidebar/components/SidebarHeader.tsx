@@ -18,13 +18,14 @@ export function SidebarHeader({ setIsOpen, setIsCollapsed }: SidebarHeaderProps)
                     <BarChart2 className="w-5 h-5" />
                 </div>
                 <div className="flex items-center gap-1.5 overflow-hidden">
-                    <h1 className="font-bold text-sm text-gray-900 dark:text-gray-100 leading-tight truncate">
+                    <h1 className="font-bold text-sm leading-tight truncate" style={{ color: 'var(--text-primary)' }}>
                         {appTitle}
                     </h1>
                     {/* Toggle Button for Desktop - Next to Title */}
                     <button
                         onClick={() => setIsCollapsed(true)}
-                        className="hidden lg:flex p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-all shrink-0"
+                        className="hidden lg:flex p-1 rounded-md transition-all shrink-0 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        style={{ color: 'var(--text-muted)' }}
                         title="Collapse sidebar"
                     >
                         <PanelLeftClose className="w-3.5 h-3.5" />
@@ -35,10 +36,11 @@ export function SidebarHeader({ setIsOpen, setIsCollapsed }: SidebarHeaderProps)
             {/* Close Button for Mobile */}
             <button
                 onClick={() => setIsOpen(false)}
-                className="lg:hidden p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors shrink-0"
+                className="lg:hidden p-1.5 rounded-lg transition-colors shrink-0 hover:bg-[var(--card-bg-hover)]"
+                style={{ color: 'var(--text-muted)' }}
                 aria-label="Close sidebar"
             >
-                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                <X className="w-5 h-5" />
             </button>
         </div>
     );

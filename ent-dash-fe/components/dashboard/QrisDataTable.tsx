@@ -6,6 +6,7 @@ import { useQrisData } from "./hooks/useQrisData";
 import { QrisDataTableToolbar } from "./QrisDataTableToolbar";
 import { useTranslation } from "@/hooks/useTranslation";
 import { StatusBadge, BadgeStatus } from "../ui/StatusBadge";
+import { exportToCSV } from "@/utils/export";
 
 export interface QrisDataTableProps {
     network: 'aj' | 'onus' | 'rintis';
@@ -69,6 +70,20 @@ export function QrisDataTable({ network, dateFilter, onDateFilterChange }: QrisD
         )
     }
 
+    const handleExportCSV = () => {
+        const formattedData = filteredData.map(row => ({
+            "Tanggal": row.timestamp,
+            "STAN": row.stan,
+            "Merchant": row.merchant,
+            "Nominal": row.nominal,
+            "Status Bank": row.bankStatus,
+            "Status Artajasa/Network": row.artajasaStatus || "-",
+            "Status Rekon": row.reconStatus
+        }));
+        exportToCSV(formattedData, `qris-${network}-data`);
+        setIsExportOpen(false);
+    };
+
     return (
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden flex flex-col">
             <QrisDataTableToolbar
@@ -85,6 +100,7 @@ export function QrisDataTable({ network, dateFilter, onDateFilterChange }: QrisD
                 isExportOpen={isExportOpen}
                 setIsExportOpen={setIsExportOpen}
                 exportRef={exportRef}
+                onExportCSV={handleExportCSV}
             />
 
             {/* Table */}

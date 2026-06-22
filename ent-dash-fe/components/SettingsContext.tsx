@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { Theme, Size, Language } from "../types";
 import { UserService } from "../services/UserService";
 
@@ -16,128 +16,110 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-    // Lazy initialization for states
-    const [theme, setTheme] = useState<Theme>("system");
-    const [size, setSize] = useState<Size>("comfortable");
-    const [language, setLanguage] = useState<Language>("ID");
-    const [isMounted, setIsMounted] = useState(false);
+    const [theme, setThemeState] = useState<Theme>("system");
+    const [size, setSizeState] = useState<Size>("comfortable");
+    const [language, setLanguageState] = useState<Language>("ID");
+    const [mounted, setMounted] = useState(false);
+
+    const applyTheme = useCallback((targetTheme: Theme) => {
+        const root = window.document.documentElement;
+        root.classList.remove("light", "dark");
+
+        let activeTheme = targetTheme;
+        if (targetTheme === "system") {
+            activeTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+
+        root.classList.add(activeTheme);
+        root.setAttribute("data-theme", activeTheme);
+        root.style.colorScheme = activeTheme;
+    }, []);
+
+    const applySize = useCallback((targetSize: Size) => {
+        const root = window.document.documentElement;
+        root.classList.remove("size-compact", "size-comfortable", "size-large");
+        root.classList.add(`size-${targetSize}`);
+    }, []);
 
     // Sync settings on mount
     useEffect(() => {
-        let savedTheme = localStorage.getItem("app-theme") as Theme | null;
-        let savedSize = localStorage.getItem("app-size") as Size | null;
-        let savedLang = localStorage.getItem("app-lang") as Language | null;
+        const savedTheme = localStorage.getItem("app-theme") as Theme | null;
+        const savedSize = localStorage.getItem("app-size") as Size | null;
+        const savedLang = localStorage.getItem("app-lang") as Language | null;
 
+        // Try to get from session (user profile) — pakai key baru 'auth-profile' (tanpa token)
         try {
-            const authUserJson = sessionStorage.getItem("auth-user");
-            if (authUserJson) {
-                const user = JSON.parse(authUserJson);
+            const profileJson = sessionStorage.getItem("auth-profile") || sessionStorage.getItem("auth-user"); // fallback
+            if (profileJson) {
+                const user = JSON.parse(profileJson);
                 if (user.uiSettings) {
-                    if (user.uiSettings.theme) savedTheme = user.uiSettings.theme as Theme;
-                    if (user.uiSettings.size) savedSize = user.uiSettings.size as Size;
-                    if (user.uiSettings.language) savedLang = user.uiSettings.language as Language;
-
-                    // Priority save to local storage
-                    if (savedTheme) localStorage.setItem("app-theme", savedTheme);
-                    if (savedSize) localStorage.setItem("app-size", savedSize);
-                    if (savedLang) localStorage.setItem("app-lang", savedLang);
+                    if (user.uiSettings.theme) setThemeState(user.uiSettings.theme as Theme);
+                    if (user.uiSettings.size) setSizeState(user.uiSettings.size as Size);
+                    if (user.uiSettings.language) setLanguageState(user.uiSettings.language as Language);
                 }
+            } else {
+                // Fallback to local storage
+                if (savedTheme) setThemeState(savedTheme);
+                if (savedSize) setSizeState(savedSize);
+                if (savedLang) setLanguageState(savedLang);
             }
         } catch (e) {
             console.error("Failed to parse auth user JSON during settings init.", e);
         }
 
-        setTimeout(() => {
-            if (savedTheme) setTheme(savedTheme);
-            if (savedSize) setSize(savedSize);
-            if (savedLang) setLanguage(savedLang);
-            setIsMounted(true);
-        }, 0);
+        setMounted(true);
     }, []);
 
-    // Network & Session Optimistic Sync
-    const syncSettingToApi = async (newTheme: Theme, newSize: Size, newLang: Language) => {
-        const authUserJson = sessionStorage.getItem("auth-user");
-        if (authUserJson) {
-            try {
-                // Optimistically update session storage
-                const user = JSON.parse(authUserJson);
-                user.uiSettings = { theme: newTheme, size: newSize, language: newLang };
-                sessionStorage.setItem("auth-user", JSON.stringify(user));
+    // Apply changes to DOM
+    useEffect(() => {
+        if (!mounted) return;
+        applyTheme(theme);
 
-                // Send to backend
+        if (theme === "system") {
+            const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+            const handler = () => applyTheme("system");
+            mediaQuery.addEventListener("change", handler);
+            return () => mediaQuery.removeEventListener("change", handler);
+        }
+    }, [theme, mounted, applyTheme]);
+
+    useEffect(() => {
+        if (!mounted) return;
+        applySize(size);
+    }, [size, mounted, applySize]);
+
+    // Network & Session Sync
+    const syncToApi = async (newTheme: Theme, newSize: Size, newLang: Language) => {
+        const profileJson = sessionStorage.getItem("auth-profile") || sessionStorage.getItem("auth-user");
+        if (profileJson) {
+            try {
+                const profile = JSON.parse(profileJson);
+                profile.uiSettings = { theme: newTheme, size: newSize, language: newLang };
+                sessionStorage.setItem("auth-profile", JSON.stringify(profile));
                 await UserService.updateSettings({ theme: newTheme, size: newSize, language: newLang });
             } catch (e) {
-                console.error("Failed to sync UI settings to Backend API", e);
+                console.error("Failed to sync settings", e);
             }
         }
     };
 
     const handleSetTheme = (newTheme: Theme) => {
-        setTheme(newTheme);
-        syncSettingToApi(newTheme, size, language);
+        setThemeState(newTheme);
+        localStorage.setItem("app-theme", newTheme);
+        syncToApi(newTheme, size, language);
     };
 
     const handleSetSize = (newSize: Size) => {
-        setSize(newSize);
-        syncSettingToApi(theme, newSize, language);
+        setSizeState(newSize);
+        localStorage.setItem("app-size", newSize);
+        syncToApi(theme, newSize, language);
     };
 
     const handleSetLanguage = (newLang: Language) => {
-        setLanguage(newLang);
-        syncSettingToApi(theme, size, newLang);
+        setLanguageState(newLang);
+        localStorage.setItem("app-lang", newLang);
+        syncToApi(theme, size, newLang);
     };
-
-    // Handle theme changes
-    useEffect(() => {
-        if (!isMounted) return;
-        localStorage.setItem("app-theme", theme);
-
-        const root = window.document.documentElement;
-
-        const applyTheme = () => {
-            const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-            const activeTheme = theme === "system" ? systemTheme : theme;
-
-            if (activeTheme === "dark") {
-                root.classList.add("dark");
-                document.body.classList.add("dark");
-                root.setAttribute("data-theme", "dark");
-                root.style.colorScheme = "dark";
-            } else {
-                root.classList.remove("dark");
-                document.body.classList.remove("dark");
-                root.setAttribute("data-theme", "light");
-                root.style.colorScheme = "light";
-            }
-        };
-
-        applyTheme();
-
-        // Listen for system changes if in system mode
-        if (theme === "system") {
-            const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-            const handler = () => applyTheme();
-            mediaQuery.addEventListener("change", handler);
-            return () => mediaQuery.removeEventListener("change", handler);
-        }
-    }, [theme, isMounted]);
-
-    // Handle size changes
-    useEffect(() => {
-        if (!isMounted) return;
-        localStorage.setItem("app-size", size);
-
-        const root = window.document.documentElement;
-        root.classList.remove("size-compact", "size-comfortable", "size-large");
-        root.classList.add(`size-${size}`);
-    }, [size, isMounted]);
-
-    // Handle language changes
-    useEffect(() => {
-        if (!isMounted) return;
-        localStorage.setItem("app-lang", language);
-    }, [language, isMounted]);
 
     return (
         <SettingsContext.Provider
@@ -147,7 +129,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                 language, setLanguage: handleSetLanguage
             }}
         >
-            <div className={!isMounted ? "opacity-0" : "opacity-100 transition-opacity duration-300"}>
+            <div className={!mounted ? "opacity-0" : "opacity-100 transition-opacity duration-300"}>
                 {children}
             </div>
         </SettingsContext.Provider>

@@ -52,7 +52,17 @@ export default function RekonQrisOnUsDashboard() {
     }, [metrics, t]);
 
     if (isLoading || !metrics) {
-        return <div className="p-8"><div className="animate-pulse bg-gray-200 h-64 rounded-xl" /></div>;
+        return (
+            <div className="min-h-screen bg-transparent p-6 lg:p-8 space-y-8">
+                <div className="h-10 w-64 animate-pulse rounded-xl" style={{ background: 'var(--card-bg-hover)' }} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="h-32 animate-pulse rounded-2xl border" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }} />
+                    ))}
+                </div>
+                <div className="h-96 animate-pulse rounded-2xl border" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }} />
+            </div>
+        );
     }
 
     return (

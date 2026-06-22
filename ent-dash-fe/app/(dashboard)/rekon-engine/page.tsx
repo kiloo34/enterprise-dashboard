@@ -1,135 +1,120 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback } from 'react';
-import useSWR from 'swr';
-import { Database } from 'lucide-react';
-import { PageHeader } from '@/components/ui/PageHeader';
-import { EngineLogStats } from './components/EngineLogStats';
-import { EngineLogFilters } from './components/EngineLogFilters';
-import { EngineLogTable, EngineLog } from './components/EngineLogTable';
-import { EngineLogDetailModal } from './components/EngineLogDetailModal';
-import { api } from '@/utils/api';
+import React, { useState, useCallback } from "react";
+import { Database, RefreshCw, Layers } from "lucide-react";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { EngineLogStats } from "./components/EngineLogStats";
+import { EngineLogFilters } from "./components/EngineLogFilters";
+import { EngineLogTable } from "./components/EngineLogTable";
+import { EngineLogDetailModal } from "./components/EngineLogDetailModal";
+import { useReconLogs, useReconStats } from "@/services/ReconService";
+import { EngineLog } from "@/types/recon";
+import clsx from "clsx";
+import { exportToCSV } from "@/utils/export";
+import { useDebounce } from "@/hooks/useDebounce";
 
-// ─── Time range selector options ─────────────────────────────────────────────
 const TIME_RANGES = [
-    { label: '24j', hours: 24 },
-    { label: '7h', hours: 24 * 7 },
-    { label: '30h', hours: 24 * 30 },
+    { label: "24j", hours: 24 },
+    { label: "7h", hours: 24 * 7 },
+    { label: "30h", hours: 24 * 30 },
 ] as const;
-type TimeRangeLabel = (typeof TIME_RANGES)[number]['label'];
+
+type TimeRangeLabel = (typeof TIME_RANGES)[number]["label"];
 
 export default function RekonEnginePage() {
-    // ─── Filter state ─────────────────────────────────────────────────────────
-    const [searchQuery, setSearchQuery] = useState('');
-    const [engineName, setEngineName] = useState('ALL');
-    const [logLevel, setLogLevel] = useState('ALL');
-    const [module, setModule] = useState('ALL');
+    const [searchQuery, setSearchQuery] = useState("");
+    const debouncedSearchQuery = useDebounce(searchQuery, 300);
+    const [engineName, setEngineName] = useState("ALL");
+    const [logLevel, setLogLevel] = useState("ALL");
+    const [module, setModule] = useState("ALL");
     const [liveTail, setLiveTail] = useState(false);
-    const [timeRange, setTimeRange] = useState<TimeRangeLabel>('30h');
+    const [timeRange, setTimeRange] = useState<TimeRangeLabel>("30h");
     const [selectedLog, setSelectedLog] = useState<EngineLog | null>(null);
 
-    // ─── API Fetching w/ SWR ──────────────────────────────────────────────────
-    const queryParams = new URLSearchParams({
-        limit: '100',
-        ...(engineName !== 'ALL' && { engineName }),
-        ...(logLevel !== 'ALL' && { logLevel }),
-        ...(module !== 'ALL' && { module }),
-        ...(searchQuery && { searchQuery }),
-    }).toString();
+    const { logs, isLoading, isValidating, mutate: mutateLogs } = useReconLogs({
+        engineName,
+        logLevel,
+        module,
+        searchQuery: debouncedSearchQuery,
+        liveTail,
+    });
 
-    const {
-        data: logs = [],
-        isValidating: isRefreshing,
-        mutate: mutateLogs
-    } = useSWR<EngineLog[]>(
-        `api/recon/engine/monitor/logs?${queryParams}`,
-        (url) => api<EngineLog[]>(url).then(res => res || []),
-        { refreshInterval: liveTail ? 5000 : 0 }
-    );
+    const { stats, isLoading: statsLoading, mutate: mutateStats } = useReconStats(liveTail);
 
-    const {
-        data: statsData,
-        mutate: mutateStats
-    } = useSWR(
-        'api/recon/engine/monitor/stats',
-        (url) => api<any>(url).then(res => res || {}),
-        { refreshInterval: liveTail ? 10000 : 0 }
-    );
-
-    // ─── Stats Fallback ───────────────────────────────────────────────────────
-    const stats = {
-        totalLogs: statsData?.totalLogs || 0,
-        errorTrend: statsData?.errorTrend || 0,
-        warningCount: statsData?.warningCount || 0,
-        mostActiveEngine: statsData?.mostActiveEngine || '-',
-        mostActivePercent: statsData?.mostActivePercent || 0,
-    };
-
-    // ─── Handlers ─────────────────────────────────────────────────────────────
     const handleRefresh = useCallback(() => {
         mutateLogs();
         mutateStats();
     }, [mutateLogs, mutateStats]);
 
     const handleExport = useCallback(() => {
-        const headers = ['Timestamp', 'Nama Engine', 'Run ID', 'Level', 'Tabel Log', 'Tabel Histori', 'Modul', 'Pesan'];
-        const rows = logs.map(l => [
-            l.timestamp,
-            l.engineName,
-            l.runId,
-            l.level,
-            `"${l.tableName}"`,
-            `"${l.historyTable}"`,
-            `"${l.module}"`,
-            `"${l.message.replace(/"/g, '""')}"`,
-        ].join(','));
-
-        const csv = [headers.join(','), ...rows].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `engine-rekon-log-${timeRange}-${Date.now()}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+        const formattedData = logs.map((l) => ({
+            "Timestamp": l.timestamp,
+            "Nama Engine": l.engineName,
+            "Run ID": l.runId,
+            "Level": l.level,
+            "Tabel Log": l.tableName,
+            "Tabel Histori": l.historyTable,
+            "Modul": l.module,
+            "Pesan": l.message
+        }));
+        
+        exportToCSV(formattedData, `engine-rekon-log-${timeRange}`);
     }, [logs, timeRange]);
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-5">
-
-            {/* ── Header + Time range selector ──────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                <div className="flex-1">
-                    <PageHeader
-                        title="Monitoring Engine Rekonsiliasi"
-                        description="Memantau histori eksekusi (engine_*_his) dan log detail (engine_*_log) dari schema rekon."
-                        icon={Database}
-                    />
-                </div>
-
-                <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl self-start mt-1">
-                    {TIME_RANGES.map(({ label }) => (
+        <div className="min-h-screen bg-transparent p-6 lg:p-8 space-y-8 overflow-x-hidden">
+            <PageHeader
+                title="Monitoring Engine Rekonsiliasi"
+                description="Memantau histori eksekusi (engine_*_his) dan log detail (engine_*_log) dari schema rekon secara real-time."
+                icon={Layers}
+                actions={
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 p-1 rounded-xl shadow-sm border" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+                            {TIME_RANGES.map(({ label }) => (
+                                <button
+                                    key={label}
+                                    onClick={() => setTimeRange(label)}
+                                    className={clsx(
+                                        "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
+                                        timeRange === label ? "shadow-sm" : "hover:text-[var(--text-primary)]"
+                                    )}
+                                    style={{
+                                        background: timeRange === label ? 'var(--card-bg-hover)' : 'transparent',
+                                        color: timeRange === label ? 'var(--text-primary)' : 'var(--text-muted)'
+                                    }}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
                         <button
-                            key={label}
-                            onClick={() => setTimeRange(label)}
-                            className={`px-3.5 py-1.5 text-sm font-medium rounded-lg transition-all ${timeRange === label
-                                    ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                }`}
+                            onClick={handleRefresh}
+                            disabled={isValidating}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-semibold disabled:opacity-50 shadow-sm border hover:bg-[var(--btn-secondary-hover-bg)]"
+                            style={{
+                                background: 'var(--btn-secondary-bg)',
+                                borderColor: 'var(--btn-secondary-border)',
+                                color: 'var(--btn-secondary-text)'
+                            }}
                         >
-                            {label}
+                            <RefreshCw className={clsx("w-4 h-4", isValidating && "animate-spin")} />
+                            Refresh
                         </button>
-                    ))}
-                    <button className="px-3.5 py-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-lg transition-all">
-                        Custom
-                    </button>
-                </div>
-            </div>
+                    </div>
+                }
+            />
 
-            {/* ── Stat cards ────────────────────────────────────────────── */}
-            <EngineLogStats {...stats} />
+            {/* Stats Section */}
+            <EngineLogStats
+                totalLogs={stats?.totalLogs || 0}
+                errorTrend={stats?.errorTrend || 0}
+                warningCount={stats?.warningCount || 0}
+                mostActiveEngine={stats?.mostActiveEngine || "-"}
+                mostActivePercent={stats?.mostActivePercent || 0}
+                isLoading={statsLoading}
+            />
 
-            {/* ── Filter toolbar ────────────────────────────────────────── */}
+            {/* Filters Section */}
             <EngineLogFilters
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
@@ -143,23 +128,16 @@ export default function RekonEnginePage() {
                 onLiveTailChange={setLiveTail}
                 onExport={handleExport}
                 onRefresh={handleRefresh}
-                isRefreshing={isRefreshing}
+                isRefreshing={isValidating}
             />
 
-            {/* ── Log table ─────────────────────────────────────────────── */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-                <EngineLogTable
-                    logs={logs}
-                    isLoading={isRefreshing}
-                    onViewDetail={setSelectedLog}
-                />
+            {/* Table Section */}
+            <div className="rounded-2xl shadow-sm overflow-hidden transition-all border" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+                <EngineLogTable logs={logs} isLoading={isLoading} onViewDetail={setSelectedLog} />
             </div>
 
-            {/* ── Detail modal ──────────────────────────────────────────── */}
-            <EngineLogDetailModal
-                log={selectedLog}
-                onClose={() => setSelectedLog(null)}
-            />
+            {/* Detail Modal */}
+            <EngineLogDetailModal log={selectedLog} onClose={() => setSelectedLog(null)} />
         </div>
     );
 }

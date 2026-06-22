@@ -14,6 +14,7 @@ import {
     UploadCloud,
     PanelLeftClose,
     PanelLeftOpen,
+    Monitor,
 } from "lucide-react";
 import clsx from "clsx";
 import { UserProfile } from "./UserProfile";
@@ -45,7 +46,9 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
         canViewDashboardKeuangan, canViewDashboardOperasi, canViewEngineMonitoring,
         canManageAccess, canViewKeuanganKinerja, canViewOperasiSummary,
         canViewRekonQrisAj, canViewRekonQrisRintis, canViewRekonQrisOnUs,
-        canManageUser, canManageRbac
+        canManageUser, canManageRbac,
+        isDireksiRole, isOperasiRole, isDireksiUnit, isOperasiUnit, isEDMUnit, isAdmin,
+        user,
     } = useSidebarNavigation();
 
     // Icon-only mini nav items for collapsed mode
@@ -62,27 +65,29 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
     return (
         <aside
             className={clsx(
-                "fixed left-0 top-0 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col z-50 transition-all duration-300 ease-in-out lg:translate-x-0",
+                "fixed left-0 top-0 h-screen flex flex-col z-50 transition-all duration-300 ease-in-out lg:translate-x-0 border-r backdrop-blur-md",
                 isCollapsed ? "w-16" : "w-64",
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}
+            style={{ background: 'color-mix(in srgb, var(--card-bg) 90%, transparent)', borderColor: 'var(--card-border)' }}
         >
             {/* Header: logo + collapse toggle */}
             {isCollapsed ? (
-                <div className="flex flex-col items-center justify-center h-20 border-b border-gray-200 dark:border-gray-800 px-2">
+                <div className="flex flex-col items-center justify-center h-20 px-2 border-b" style={{ borderColor: 'var(--card-border)' }}>
                     <div className="bg-blue-600 p-1.5 rounded-lg text-white mb-1 shadow-sm">
                         <BarChart2 className="w-5 h-5" />
                     </div>
                     <button
                         onClick={() => setIsCollapsed(false)}
-                        className="flex p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-gray-800 rounded-md transition-colors"
+                        className="flex p-1 rounded-md transition-colors hover:bg-[var(--card-bg-hover)] hover:text-blue-600"
+                        style={{ color: 'var(--text-muted)' }}
                         title="Expand sidebar"
                     >
                         <PanelLeftOpen className="w-4 h-4" />
                     </button>
                 </div>
             ) : (
-                <div className="border-b border-gray-200 dark:border-gray-800">
+                <div className="border-b" style={{ borderColor: 'var(--card-border)' }}>
                     <SidebarHeader setIsOpen={setIsOpen} setIsCollapsed={setIsCollapsed} />
                 </div>
             )}
@@ -99,8 +104,9 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
                                 "flex items-center justify-center w-10 h-10 rounded-xl transition-colors",
                                 item.active
                                     ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200"
+                                    : "hover:bg-[var(--card-bg-hover)]"
                             )}
+                            style={!item.active ? { color: 'var(--text-muted)' } : undefined}
                         >
                             <item.icon className="w-5 h-5" />
                         </Link>
@@ -113,7 +119,7 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
                     <div className="flex-1 px-4 py-2 space-y-4 overflow-y-auto">
                         {!hasResults && (
                             <div className="py-8 text-center px-4">
-                                <p className="text-sm text-gray-500 dark:text-gray-400 italic">{t.noResults}</p>
+                                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>{t.noResults}</p>
                             </div>
                         )}
 
@@ -126,17 +132,10 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
                                     label={t.dashboard}
                                     active={isDashboardActive}
                                 >
+                                    {/* Direksi Menu: Flatten if Direksi Role/Unit or if Admin in Direksi Unit */}
                                     {canViewDashboardKeuangan && (
-                                        <SidebarMenuDropdown
-                                            isOpen={isDireksiOpen}
-                                            onToggle={() => setIsDireksiOpen(!isDireksiOpen)}
-                                            icon={Users}
-                                            label={t.direksi}
-                                            show={showDireksi}
-                                            isLevel2
-                                            active={isDireksiActive}
-                                        >
-                                            {canViewKeuanganKinerja && (
+                                        (isDireksiRole || (isAdmin && isDireksiUnit)) ? (
+                                            canViewKeuanganKinerja && (
                                                 <SidebarNavItem
                                                     href="/direksi/kinerja-keuangan"
                                                     icon={BarChart2}
@@ -144,33 +143,71 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
                                                     active={pathname === "/direksi/kinerja-keuangan" || pathname === "/"}
                                                     isSubItem
                                                 />
-                                            )}
-                                        </SidebarMenuDropdown>
+                                            )
+                                        ) : (
+                                            <SidebarMenuDropdown
+                                                isOpen={isDireksiOpen}
+                                                onToggle={() => setIsDireksiOpen(!isDireksiOpen)}
+                                                icon={Users}
+                                                label={t.direksi}
+                                                show={showDireksi}
+                                                isLevel2
+                                                active={isDireksiActive}
+                                            >
+                                                {canViewKeuanganKinerja && (
+                                                    <SidebarNavItem
+                                                        href="/direksi/kinerja-keuangan"
+                                                        icon={BarChart2}
+                                                        label={t.direkturUtama}
+                                                        active={pathname === "/direksi/kinerja-keuangan" || pathname === "/"}
+                                                        isSubItem
+                                                    />
+                                                )}
+                                            </SidebarMenuDropdown>
+                                        )
                                     )}
 
+                                    {/* Operasi Menu: Flatten if Operasi Role/Unit or if Admin in Operasi Unit */}
                                     {canViewDashboardOperasi && (
-                                        <SidebarMenuDropdown
-                                            isOpen={isOperasiOpen}
-                                            onToggle={() => setIsOperasiOpen(!isOperasiOpen)}
-                                            icon={Briefcase}
-                                            label={t.divisiOperasi}
-                                            show={showOperasi}
-                                            isLevel2
-                                            active={isOperasiActive}
-                                        >
-                                            {canViewOperasiSummary && (
-                                                <SidebarNavItem
-                                                    href="/divisi-operasi/summary"
-                                                    icon={BarChart2}
-                                                    label={t.summary}
-                                                    active={pathname.startsWith("/divisi-operasi/summary")}
-                                                    isSubItem
-                                                />
-                                            )}
-                                            {canViewRekonQrisAj && <SidebarNavItem href="/divisi-operasi/rekon-qris-aj" icon={FileText} label={t.rekonQris} active={pathname.startsWith("/divisi-operasi/rekon-qris-aj")} isSubItem />}
-                                            {canViewRekonQrisRintis && <SidebarNavItem href="/divisi-operasi/rekon-qris-rintis" icon={FileText} label={t.rekonQrisRintis} active={pathname.startsWith("/divisi-operasi/rekon-qris-rintis")} isSubItem />}
-                                            {canViewRekonQrisOnUs && <SidebarNavItem href="/divisi-operasi/rekon-qris-on-us" icon={FileText} label={t.rekonQrisOnus} active={pathname.startsWith("/divisi-operasi/rekon-qris-on-us")} isSubItem />}
-                                        </SidebarMenuDropdown>
+                                        (isOperasiRole || (isAdmin && isOperasiUnit)) ? (
+                                            <>
+                                                {canViewOperasiSummary && (
+                                                    <SidebarNavItem
+                                                        href="/divisi-operasi/summary"
+                                                        icon={BarChart2}
+                                                        label={t.summary}
+                                                        active={pathname.startsWith("/divisi-operasi/summary")}
+                                                        isSubItem
+                                                    />
+                                                )}
+                                                {canViewRekonQrisAj && <SidebarNavItem href="/divisi-operasi/rekon-qris-aj" icon={FileText} label={t.rekonQris} active={pathname.startsWith("/divisi-operasi/rekon-qris-aj")} isSubItem />}
+                                                {canViewRekonQrisRintis && <SidebarNavItem href="/divisi-operasi/rekon-qris-rintis" icon={FileText} label={t.rekonQrisRintis} active={pathname.startsWith("/divisi-operasi/rekon-qris-rintis")} isSubItem />}
+                                                {canViewRekonQrisOnUs && <SidebarNavItem href="/divisi-operasi/rekon-qris-on-us" icon={FileText} label={t.rekonQrisOnus} active={pathname.startsWith("/divisi-operasi/rekon-qris-on-us")} isSubItem />}
+                                            </>
+                                        ) : (
+                                            <SidebarMenuDropdown
+                                                isOpen={isOperasiOpen}
+                                                onToggle={() => setIsOperasiOpen(!isOperasiOpen)}
+                                                icon={Briefcase}
+                                                label={t.divisiOperasi}
+                                                show={showOperasi}
+                                                isLevel2
+                                                active={isOperasiActive}
+                                            >
+                                                {canViewOperasiSummary && (
+                                                    <SidebarNavItem
+                                                        href="/divisi-operasi/summary"
+                                                        icon={BarChart2}
+                                                        label={t.summary}
+                                                        active={pathname.startsWith("/divisi-operasi/summary")}
+                                                        isSubItem
+                                                    />
+                                                )}
+                                                {canViewRekonQrisAj && <SidebarNavItem href="/divisi-operasi/rekon-qris-aj" icon={FileText} label={t.rekonQris} active={pathname.startsWith("/divisi-operasi/rekon-qris-aj")} isSubItem />}
+                                                {canViewRekonQrisRintis && <SidebarNavItem href="/divisi-operasi/rekon-qris-rintis" icon={FileText} label={t.rekonQrisRintis} active={pathname.startsWith("/divisi-operasi/rekon-qris-rintis")} isSubItem />}
+                                                {canViewRekonQrisOnUs && <SidebarNavItem href="/divisi-operasi/rekon-qris-on-us" icon={FileText} label={t.rekonQrisOnus} active={pathname.startsWith("/divisi-operasi/rekon-qris-on-us")} isSubItem />}
+                                            </SidebarMenuDropdown>
+                                        )
                                     )}
                                 </SidebarMenuDropdown>
                             )
@@ -203,12 +240,29 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
 
                         <div className="space-y-4 pt-4">
                             <div className="px-3 flex items-center gap-2 mb-2">
-                                <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
-                                <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em]">System</span>
-                                <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
+                                <div className="h-px flex-1" style={{ background: 'var(--card-border)' }} />
+                                <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--text-muted)' }}>System</span>
+                                <div className="h-px flex-1" style={{ background: 'var(--card-border)' }} />
                             </div>
 
                             <div className="space-y-1">
+                                {isAdmin && (
+                                    <SidebarNavItem
+                                        href="/admin/dashboard"
+                                        icon={Shield}
+                                        label="Admin Dashboard"
+                                        active={pathname === "/admin/dashboard"}
+                                    />
+                                )}
+                                {/* System Monitoring — super-admin only */}
+                                {user?.role === "super-admin" && (
+                                    <SidebarNavItem
+                                        href="/admin/monitoring"
+                                        icon={Monitor}
+                                        label="System Monitoring"
+                                        active={pathname === "/admin/monitoring"}
+                                    />
+                                )}
                                 {canManageAccess && (
                                     <SidebarMenuDropdown
                                         isOpen={isAccessOpen}
@@ -227,6 +281,15 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
                                             )}
                                         </div>
                                     </SidebarMenuDropdown>
+                                )}
+
+                                {isAdmin && (
+                                    <SidebarNavItem
+                                        href="/settings/system-config"
+                                        icon={Database}
+                                        label="Konfigurasi Sistem"
+                                        active={pathname.startsWith("/settings/system-config")}
+                                    />
                                 )}
 
                                 <SidebarNavItem href="/settings" icon={Settings} label={t.settings} active={pathname === "/settings"} />

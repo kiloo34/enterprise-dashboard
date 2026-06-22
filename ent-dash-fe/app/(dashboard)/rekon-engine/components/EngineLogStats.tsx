@@ -18,36 +18,40 @@ interface StatCardProps {
 
 function StatCard({ title, value, trend, subtext, icon: Icon, iconColor, iconBg, alert, alertType }: StatCardProps) {
     const alertColors = {
-        error: 'text-red-600 dark:text-red-400',
-        warning: 'text-amber-600 dark:text-amber-400',
-        info: 'text-blue-600 dark:text-blue-400',
+        error: "text-red-600 dark:text-red-400",
+        warning: "text-amber-600 dark:text-amber-400",
+        info: "text-blue-600 dark:text-blue-400",
     };
     return (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
-            <div className="flex items-start justify-between mb-3">
-                <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{title}</p>
-                <div className={clsx('w-10 h-10 rounded-2xl flex items-center justify-center transition-colors group-hover:scale-110 duration-300', iconBg)}>
-                    <Icon className={clsx('w-5 h-5', iconColor)} />
+        <div className="relative overflow-hidden rounded-2xl border p-6 flex flex-col gap-4 shadow-sm dark:shadow-xl transition-all hover:scale-[1.02] hover:border-blue-500/30 group" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+            <div className="flex items-start justify-between">
+                <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>{title}</p>
+                    <p className="text-2xl font-black mt-1 tracking-tight" style={{ color: 'var(--text-primary)' }}>{value}</p>
+                </div>
+                <div className={clsx("w-10 h-10 rounded-xl flex items-center justify-center transition-all group-hover:scale-110 duration-300", iconBg)}>
+                    <Icon className={clsx("w-5 h-5", iconColor)} />
                 </div>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight mb-1">{value}</p>
-            {trend && (
-                <div className="flex items-center gap-1">
-                    {trend.positive
-                        ? <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                        : <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
-                    <span className={clsx('text-xs font-medium', trend.positive ? 'text-emerald-500' : 'text-red-500')}>
-                        {trend.value}
-                    </span>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">{trend.label}</span>
-                </div>
-            )}
-            {alert && (
-                <p className={clsx('text-xs font-medium mt-1', alertColors[alertType || 'info'])}>{alert}</p>
-            )}
-            {subtext && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{subtext}</p>
-            )}
+            
+            <div className="mt-auto">
+                {trend && (
+                    <div className="flex items-center gap-1.5">
+                        <div className={clsx("flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold", trend.positive ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400")}>
+                            {trend.positive ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+                            {trend.value}
+                        </div>
+                        <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>{trend.label}</span>
+                    </div>
+                )}
+                {alert && (
+                    <p className={clsx("text-[10px] font-bold mt-1 flex items-center gap-1", alertColors[alertType || "info"])}>
+                        <AlertCircle className="w-3 h-3" />
+                        {alert}
+                    </p>
+                )}
+                {subtext && <p className="text-[10px] mt-1 font-medium" style={{ color: 'var(--text-muted)' }}>{subtext}</p>}
+            </div>
         </div>
     );
 }
@@ -69,7 +73,7 @@ export function EngineLogStats({
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 h-28 animate-pulse">
+                    <div key={i} className="rounded-2xl border p-5 h-28 animate-pulse" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
                         <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2 mb-3" />
                         <div className="h-7 bg-gray-100 dark:bg-gray-800 rounded w-2/3 mb-2" />
                         <div className="h-2.5 bg-gray-100 dark:bg-gray-800 rounded w-1/3" />

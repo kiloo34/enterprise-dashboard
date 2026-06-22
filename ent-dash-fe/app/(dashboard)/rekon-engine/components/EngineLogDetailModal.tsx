@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { X, Clock, Database, AlertCircle, Layers, Hash, Server, Activity } from 'lucide-react';
-import { EngineLog, LogLevel } from './EngineLogTable';
+import { EngineLog, LogLevel } from '@/types/recon';
 import { clsx } from 'clsx';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
@@ -26,8 +26,8 @@ function DetailRow({ icon: Icon, label, value }: DetailRowProps) {
                 <Icon className="w-4 h-4 text-gray-400 dark:text-gray-500" />
             </div>
             <div className="flex flex-col gap-0.5 w-full">
-                <p className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider">{label}</p>
-                <div className="text-sm text-gray-900 dark:text-white font-medium">{value}</div>
+                <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+                <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{value}</div>
             </div>
         </div>
     );
@@ -109,26 +109,27 @@ export function EngineLogDetailModal({ log, onClose }: EngineLogDetailModalProps
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="log-detail-title"
-                className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden"
+                className="w-full max-w-2xl rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden border"
+                style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--card-border)' }}>
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-700 dark:text-indigo-400">
                             <Activity className="w-6 h-6" />
                         </div>
                         <div>
-                            <h2 id="log-detail-title" className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                            <h2 id="log-detail-title" className="text-lg font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
                                 Log Detail Engine
                             </h2>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">
+                            <p className="text-xs mt-0.5 font-mono" style={{ color: 'var(--text-muted)' }}>
                                 {log.engineName} • {log.id}
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-2xl transition-all"
+                        className="p-2.5 text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-2xl transition-all"
                         aria-label="Tutup detail"
                     >
                         <X className="w-6 h-6" />
@@ -162,7 +163,7 @@ export function EngineLogDetailModal({ log, onClose }: EngineLogDetailModalProps
                             label="Run ID"
                             value={
                                 <div className="flex flex-col">
-                                    <span className="font-mono font-bold text-gray-900 dark:text-white uppercase text-sm">{log.runId}</span>
+                                    <span className="font-mono font-bold uppercase text-sm" style={{ color: 'var(--text-primary)' }}>{log.runId}</span>
                                 </div>
                             }
                         />

@@ -4,12 +4,16 @@ import React, { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { X, Save, AlertCircle } from 'lucide-react';
+import { X, Save } from 'lucide-react';
 import { User, UserFormData, Role, Position, OrganizationUnit, Permission } from '../../types/user';
 import { useTranslation } from '../../hooks/useTranslation';
-import { SearchableSelect } from '../ui/SearchableSelect';
+
+import { FormInput } from '../ui/FormInput';
+import { FormCheckbox } from '../ui/FormCheckbox';
+import { FormSearchableSelect } from '../ui/FormSearchableSelect';
 
 interface UserFormProps {
+
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: UserFormData) => Promise<void>;
@@ -48,7 +52,6 @@ export const UserForm: React.FC<UserFormProps> = ({
         roles: z.array(z.number()).default([]),
         permissions: z.array(z.number()).default([]),
     }).refine((data) => {
-        // If password is provided, password_confirmation must match
         if (data.password && data.password !== '') {
             return data.password === data.password_confirmation;
         }
@@ -103,18 +106,15 @@ export const UserForm: React.FC<UserFormProps> = ({
         }
     }, [isOpen, user, reset]);
 
-    // eslint-disable-next-line react-hooks/incompatible-library  
     const selectedPositionId = watch('position_id');
     const selectedOrgUnitId = watch('organization_unit_id');
     const [filteredSuperiors, setFilteredSuperiors] = React.useState<User[]>([]);
 
     useEffect(() => {
         let available = users.filter(u => u.id !== user?.id);
-
         const selectedPosition = positions.find(p => p.id === selectedPositionId);
         const selectedOrgUnit = organizationUnits.find(u => u.id === selectedOrgUnitId);
 
-        // Filter valid superiors
         if (selectedPosition && selectedPosition.level) {
             const targetLevel = selectedPosition.level - 1;
             available = available.filter(u => u.position?.level === targetLevel);
@@ -126,46 +126,49 @@ export const UserForm: React.FC<UserFormProps> = ({
 
         setFilteredSuperiors(available);
 
-        // Auto-select rule: "ketika user officer ditambahkan maka atasan otomatis AVP"
-        // Also applies generally if there's only 1 matching superior
         if (available.length === 1 && !user) {
-            // Only auto-select when adding a new user, prevent overwriting deliberate edits
             setValue('direct_superior_id', available[0].id);
         }
     }, [selectedPositionId, selectedOrgUnitId, positions, organizationUnits, users, setValue, user]);
 
     const handleFormSubmit = async (data: UserFormData) => {
-        // Clean up empty passwords so we don't send them
         if (data.password === '') {
             delete data.password;
             delete data.password_confirmation;
         }
-
-        // Remove permissions from payload since it's no longer managed via this form
         delete data.permissions;
-
         await onSubmit(data);
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/50 backdrop-blur-sm transition-opacity overflow-y-auto" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-            <div className="relative w-full max-w-3xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex flex-col my-auto animate-in zoom-in-95 duration-200">
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/50 backdrop-blur-sm transition-opacity overflow-y-auto"
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
+            <div
+                className="relative w-full max-w-3xl rounded-2xl shadow-2xl flex flex-col my-auto animate-in zoom-in-95 duration-200"
+                style={{ background: 'var(--modal-bg)', border: '1px solid var(--modal-border)' }}
+            >
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800 rounded-t-2xl bg-white dark:bg-gray-900">
+                <div
+                    className="flex items-center justify-between p-6 border-b rounded-t-2xl"
+                    style={{ borderColor: 'var(--modal-border)', background: 'var(--modal-header-bg)' }}
+                >
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
                             {user ? t.form.editTitle : t.form.addTitle}
                         </h2>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
                             {user ? t.form.editDesc : t.form.addDesc}
                         </p>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                        className="p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                        style={{ color: 'var(--text-muted)' }}
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -174,85 +177,43 @@ export const UserForm: React.FC<UserFormProps> = ({
                 {/* Body / Form */}
                 <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col">
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Name Input */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                {t.form.name} <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                {...register('name')}
-                                type="text"
-                                className={`w-full px-4 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:bg-gray-800 dark:border-gray-700 dark:text-white ${errors.name ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200'}`}
-                                placeholder={t.form.namePlaceholder}
-                            />
-                            {errors.name && (
-                                <p className="mt-2 text-sm text-red-500 flex items-center">
-                                    <AlertCircle className="w-4 h-4 mr-1 shrink-0" />
-                                    {errors.name.message}
-                                </p>
-                            )}
-                        </div>
+                        <FormInput
+                            label={t.form.name}
+                            registration={register('name')}
+                            required
+                            error={errors.name}
+                            placeholder={t.form.namePlaceholder}
+                        />
 
-                        {/* Email Input */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                {t.form.email} <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                {...register('email')}
-                                type="email"
-                                className={`w-full px-4 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:bg-gray-800 dark:border-gray-700 dark:text-white ${errors.email ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200'}`}
-                                placeholder={t.form.emailPlaceholder}
-                            />
-                            {errors.email && (
-                                <p className="mt-2 text-sm text-red-500 flex items-center">
-                                    <AlertCircle className="w-4 h-4 mr-1 shrink-0" />
-                                    {errors.email.message}
-                                </p>
-                            )}
-                        </div>
+                        <FormInput
+                            label={t.form.email}
+                            registration={register('email')}
+                            required
+                            error={errors.email}
+                            type="email"
+                            placeholder={t.form.emailPlaceholder}
+                        />
 
-                        {/* Password Input */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                {t.form.password} {!user && <span className="text-red-500">*</span>}
-                            </label>
-                            <input
-                                {...register('password')}
-                                type="password"
-                                className={`w-full px-4 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:bg-gray-800 dark:border-gray-700 dark:text-white ${errors.password ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200'}`}
-                                placeholder={user ? t.form.passwordPlaceholderEdit : t.form.passwordPlaceholderAdd}
-                            />
-                            {errors.password && (
-                                <p className="mt-2 text-sm text-red-500 flex items-center">
-                                    <AlertCircle className="w-4 h-4 mr-1 shrink-0" />
-                                    {errors.password.message}
-                                </p>
-                            )}
-                        </div>
+                        <FormInput
+                            label={t.form.password}
+                            registration={register('password')}
+                            required={!user}
+                            error={errors.password}
+                            type="password"
+                            placeholder={user ? t.form.passwordPlaceholderEdit : t.form.passwordPlaceholderAdd}
+                        />
 
-                        {/* Password Confirm */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                {t.form.passwordConfirm}
-                            </label>
-                            <input
-                                {...register('password_confirmation')}
-                                type="password"
-                                className={`w-full px-4 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:bg-gray-800 dark:border-gray-700 dark:text-white ${errors.password_confirmation ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200'}`}
-                                placeholder={t.form.passwordConfirmPlaceholder}
-                            />
-                            {errors.password_confirmation && (
-                                <p className="mt-2 text-sm text-red-500 flex items-center">
-                                    <AlertCircle className="w-4 h-4 mr-1 shrink-0" />
-                                    {errors.password_confirmation.message}
-                                </p>
-                            )}
-                        </div>
+                        <FormInput
+                            label={t.form.passwordConfirm}
+                            registration={register('password_confirmation')}
+                            error={errors.password_confirmation}
+                            type="password"
+                            placeholder={t.form.passwordConfirmPlaceholder}
+                        />
 
                         {/* Role Selection */}
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--label-color)' }}>
                                 {t.form.role}
                             </label>
                             <Controller
@@ -261,39 +222,32 @@ export const UserForm: React.FC<UserFormProps> = ({
                                 render={({ field }) => (
                                     <div className="flex flex-wrap gap-3">
                                         {roles.map(role => (
-                                            <label key={role.id} className="flex items-center min-w-[200px] p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 transition-colors">
-                                                <input
-                                                    type="checkbox"
-                                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                    checked={field.value?.includes(role.id)}
-                                                    onChange={(e) => {
-                                                        const current = field.value || [];
-                                                        const updated = e.target.checked
-                                                            ? [...current, role.id]
-                                                            : current.filter(id => id !== role.id);
-                                                        field.onChange(updated);
-                                                    }}
-                                                />
-                                                <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">{role.name}</span>
-                                            </label>
+                                            <FormCheckbox
+                                                key={role.id}
+                                                label={role.name}
+                                                checked={!!field.value?.includes(role.id)}
+                                                onChange={(checked) => {
+                                                    const current = field.value || [];
+                                                    const updated = checked
+                                                        ? [...current, role.id]
+                                                        : current.filter(id => id !== role.id);
+                                                    field.onChange(updated);
+                                                }}
+                                            />
                                         ))}
                                     </div>
                                 )}
                             />
                         </div>
 
-
-
                         {/* Position Selection */}
                         <div className="relative z-30">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                {t.form.position}
-                            </label>
                             <Controller
                                 name="position_id"
                                 control={control}
                                 render={({ field }) => (
-                                    <SearchableSelect
+                                    <FormSearchableSelect
+                                        label={t.form.position}
                                         options={[
                                             { value: "", label: t.form.positionPlaceholder },
                                             ...positions.map(pos => ({ value: pos.id.toString(), label: pos.name }))
@@ -302,6 +256,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                                         onChange={(val) => field.onChange(val ? Number(val) : null)}
                                         placeholder={t.form.positionPlaceholder}
                                         searchPlaceholder="Cari posisi..."
+                                        error={errors.position_id}
                                     />
                                 )}
                             />
@@ -309,14 +264,12 @@ export const UserForm: React.FC<UserFormProps> = ({
 
                         {/* Organization Unit Selection */}
                         <div className="relative z-30">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                {t.form.unit}
-                            </label>
                             <Controller
                                 name="organization_unit_id"
                                 control={control}
                                 render={({ field }) => (
-                                    <SearchableSelect
+                                    <FormSearchableSelect
+                                        label={t.form.unit}
                                         options={[
                                             { value: "", label: t.form.unitPlaceholder },
                                             ...organizationUnits.map(unit => ({ value: unit.id.toString(), label: `${unit.name} (${unit.code})` }))
@@ -325,6 +278,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                                         onChange={(val) => field.onChange(val ? Number(val) : null)}
                                         placeholder={t.form.unitPlaceholder}
                                         searchPlaceholder="Cari unit..."
+                                        error={errors.organization_unit_id}
                                     />
                                 )}
                             />
@@ -332,14 +286,12 @@ export const UserForm: React.FC<UserFormProps> = ({
 
                         {/* Direct Superior Selection */}
                         <div className="relative z-30 md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                {t.form.superior}
-                            </label>
                             <Controller
                                 name="direct_superior_id"
                                 control={control}
                                 render={({ field }) => (
-                                    <SearchableSelect
+                                    <FormSearchableSelect
+                                        label={t.form.superior}
                                         options={[
                                             { value: "", label: t.form.superiorPlaceholder },
                                             ...filteredSuperiors.map(sup => ({ value: sup.id.toString(), label: sup.name }))
@@ -348,26 +300,36 @@ export const UserForm: React.FC<UserFormProps> = ({
                                         onChange={(val) => field.onChange(val ? Number(val) : null)}
                                         placeholder={t.form.superiorPlaceholder}
                                         searchPlaceholder="Cari atasan..."
+                                        error={errors.direct_superior_id}
                                     />
                                 )}
                             />
                         </div>
+
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-end gap-3 rounded-b-2xl">
+                    <div
+                        className="p-6 border-t flex items-center justify-end gap-3 rounded-b-2xl"
+                        style={{ borderColor: 'var(--modal-border)', background: 'var(--modal-footer-bg)' }}
+                    >
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
-                            className="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-all dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+                            className="px-5 py-2 text-sm font-medium rounded-xl border transition-all"
+                            style={{
+                                background: 'var(--btn-secondary-bg)',
+                                color: 'var(--btn-secondary-text)',
+                                borderColor: 'var(--btn-secondary-border)',
+                            }}
                         >
                             {tc.cancel}
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="inline-flex items-center px-5 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-xl hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 transition-all shadow-sm"
+                            className="inline-flex items-center px-5 py-2 text-sm font-medium text-white bg-[var(--color-brand-blue)] border border-transparent rounded-xl hover:bg-[var(--color-brand-blue-hover)] focus:ring-2 focus:ring-[var(--color-brand-blue)] focus:ring-offset-2 disabled:opacity-50 transition-all shadow-sm"
                         >
                             {isSubmitting ? tc.loading : (
                                 <>

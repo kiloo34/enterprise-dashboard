@@ -8,7 +8,10 @@ export default function DireksiLayout({
     children: React.ReactNode;
 }) {
     return (
-        <ProtectedRoute allowedRoles={["super-admin", "admin", "member"]} requiredUnitCode="DIR_UTAMA">
+        <ProtectedRoute 
+            allowedRoles={["super-admin", "admin", "member", "direksi"]} 
+            requiredUnitCodes={["DIR_UTAMA", "DIR_TI", "SEVP_TI"]}
+        >
             {children}
         </ProtectedRoute>
     );

@@ -44,14 +44,22 @@ export function RoleTable({
             key: 'name',
             header: t.table.name,
             render: (role) => (
-                <div className="text-sm font-semibold text-gray-900 dark:text-white">{role.name}</div>
+                <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-100 dark:border-purple-500/20 group-hover:scale-110 transition-transform duration-500">
+                        <Shield className="w-5 h-5" />
+                    </div>
+                    <div className="font-bold tracking-tight text-[15px]" style={{ color: 'var(--text-primary)' }}>{role.name}</div>
+                </div>
             ),
         },
         {
             key: 'guard_name',
             header: t.table.guard,
             render: (role) => (
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-100 dark:border-purple-800">
+                <span 
+                    className="inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-colors shadow-sm"
+                    style={{ background: 'var(--group-card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-muted)' }}
+                >
                     {role.guard_name}
                 </span>
             ),
@@ -60,7 +68,7 @@ export function RoleTable({
             key: 'permissions_count',
             header: t.table.permsCount,
             render: (role) => (
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-blue-500/5 text-[var(--brand-primary)] border border-blue-500/10">
                     {role.permissions?.length || 0} {t.table.permsSuffix}
                 </span>
             ),
@@ -70,11 +78,11 @@ export function RoleTable({
             header: t.table.actions,
             align: 'right',
             render: (role) => (
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
                     {canUpdate && (
                         <button
                             onClick={() => onEdit(role)}
-                            className="p-2 text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                            className="p-2 text-[var(--text-muted)] hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all duration-300"
                             title={tc.edit}
                         >
                             <Edit2 className="w-4 h-4" />
@@ -83,7 +91,7 @@ export function RoleTable({
                     {canDelete && (
                         <button
                             onClick={() => onDelete(role)}
-                            className="p-2 text-gray-500 hover:text-red-600 bg-gray-50 hover:bg-red-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                            className="p-2 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all duration-300 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
                             disabled={role.name.toLowerCase() === 'administrator'}
                             title={role.name.toLowerCase() === 'administrator' ? t.table.adminDeleteTooltip : tc.delete}
                         >
@@ -102,8 +110,9 @@ export function RoleTable({
             rowKey={(role) => role.id}
             isLoading={isLoading}
             emptyText={t.table.empty}
-            emptyIcon={<Shield className="w-12 h-12 text-gray-300 dark:text-gray-600" />}
+            emptyIcon={<Shield className="w-12 h-12" style={{ color: 'var(--text-muted)' }} />}
             skeletonRows={5}
+            className="[&_tr]:group"
         />
     );
 }

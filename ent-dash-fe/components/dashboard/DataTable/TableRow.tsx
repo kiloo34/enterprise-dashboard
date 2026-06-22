@@ -13,18 +13,27 @@ export const TableRow = memo(({ row, showDetails }: TableRowProps) => {
         <tr
             className={clsx(
                 "transition-colors",
-                row.isRatio ? "bg-blue-50/30 dark:bg-blue-900/10 hover:bg-blue-100/40 dark:hover:bg-blue-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                row.isRatio 
+                    ? "bg-blue-50/30 dark:bg-blue-900/10 hover:bg-blue-100/40 dark:hover:bg-blue-900/20" 
+                    : "hover:bg-[var(--card-bg-hover)]"
             )}
+            style={{ 
+                borderBottom: '1px solid var(--card-border)' 
+            }}
         >
             <td
                 className={clsx(
-                    "p-4 text-left border-r border-gray-200 dark:border-gray-700",
-                    (row.isBold || row.isRatio) ? "font-bold text-gray-900 dark:text-gray-100" : "text-gray-600 dark:text-gray-400",
-                    row.level === 1 && "pl-8 text-gray-500 dark:text-gray-500 italic",
-                    row.level === 2 && "pl-12 text-gray-400 dark:text-gray-600 text-xs italic",
+                    "p-4 text-left border-r",
+                    row.isBold ? "font-bold" : "font-medium",
+                    row.level === 1 && "pl-8",
+                    row.level === 2 && "pl-14 text-sm",
                     row.isLink && "text-blue-600 dark:text-blue-400 cursor-pointer hover:underline",
                     row.isRatio && "font-bold"
                 )}
+                style={{ 
+                    borderColor: 'var(--card-border)',
+                    color: row.isBold ? 'var(--text-primary)' : 'var(--text-secondary)'
+                }}
             >
                 <div>
                     <div className="flex items-center gap-2">
@@ -34,45 +43,45 @@ export const TableRow = memo(({ row, showDetails }: TableRowProps) => {
                     </div>
                     {row.level !== 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
-                            {row.kelompok && <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-medium">{row.kelompok}</span>}
+                            {row.kelompok && <span className="text-[9px] uppercase font-medium" style={{ color: 'var(--text-muted)' }}>{row.kelompok}</span>}
                             {row.segment && <span className="text-[9px] text-blue-400/80 dark:text-blue-500/80 uppercase font-bold tracking-tight">| {row.segment}</span>}
                         </div>
                     )}
                 </div>
             </td>
-            <td className="p-4 border-r border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">{row.valueR1}</td>
-            <td className="p-4 border-r border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">{row.valueR2}</td>
-            <td className="p-4 border-r border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">{row.valueR3}</td>
-            <td className="p-4 border-r border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">{row.valueR4}</td>
-            <td className="p-4 border-r border-gray-200 dark:border-gray-700 font-bold text-gray-900 dark:text-gray-100">{row.valueR5}</td>
-            <td className="p-4 border-r border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">{row.targetNominal}</td>
-            <td className={clsx("p-4 border-r border-gray-200 dark:border-gray-700 font-semibold", getNumColorClass(row.targetDeviasi))}>
+            <td className="p-4 border-r" style={{ borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}>{row.valueR1}</td>
+            <td className="p-4 border-r" style={{ borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}>{row.valueR2}</td>
+            <td className="p-4 border-r" style={{ borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}>{row.valueR3}</td>
+            <td className="p-4 border-r" style={{ borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}>{row.valueR4}</td>
+            <td className="p-4 border-r font-bold" style={{ borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}>{row.valueR5}</td>
+            <td className="p-4 border-r" style={{ borderColor: 'var(--card-border)', color: 'var(--text-secondary)' }}>{row.targetNominal}</td>
+            <td className={clsx("p-4 border-r font-semibold", getNumColorClass(row.targetDeviasi))} style={{ borderColor: 'var(--card-border)' }}>
                 {formatPositive(row.targetDeviasi)}
             </td>
-            <td className={clsx("p-4 font-bold", showDetails && "border-r border-gray-200 dark:border-gray-700", getNumColorClass(row.targetPct))}>
+            <td className={clsx("p-4 font-bold", showDetails && "border-r", getNumColorClass(row.targetPct))} style={{ borderColor: 'var(--card-border)' }}>
                 {formatPositive(row.targetPct)}
             </td>
             {showDetails && (
                 <>
-                    <td className={clsx("p-4 border-r border-gray-200 dark:border-gray-700", getNumColorClass(row.dtdNominal))}>
+                    <td className={clsx("p-4 border-r", getNumColorClass(row.dtdNominal))} style={{ borderColor: 'var(--card-border)' }}>
                         {formatPositive(row.dtdNominal)}
                     </td>
-                    <td className={clsx("p-4 border-r border-gray-200 dark:border-gray-700 font-medium", getNumColorClass(row.dtdPct))}>
+                    <td className={clsx("p-4 border-r font-medium", getNumColorClass(row.dtdPct))} style={{ borderColor: 'var(--card-border)' }}>
                         {formatPositive(row.dtdPct)}
                     </td>
-                    <td className={clsx("p-4 border-r border-gray-200 dark:border-gray-700", getNumColorClass(row.mtdNominal))}>
+                    <td className={clsx("p-4 border-r", getNumColorClass(row.mtdNominal))} style={{ borderColor: 'var(--card-border)' }}>
                         {formatPositive(row.mtdNominal)}
                     </td>
-                    <td className={clsx("p-4 border-r border-gray-200 dark:border-gray-700 font-medium", getNumColorClass(row.mtdPct))}>
+                    <td className={clsx("p-4 border-r font-medium", getNumColorClass(row.mtdPct))} style={{ borderColor: 'var(--card-border)' }}>
                         {formatPositive(row.mtdPct)}
                     </td>
-                    <td className={clsx("p-4 border-r border-gray-200 dark:border-gray-700", getNumColorClass(row.ytdNominal))}>
+                    <td className={clsx("p-4 border-r", getNumColorClass(row.ytdNominal))} style={{ borderColor: 'var(--card-border)' }}>
                         {formatPositive(row.ytdNominal)}
                     </td>
-                    <td className={clsx("p-4 border-r border-gray-200 dark:border-gray-700 font-medium", getNumColorClass(row.ytdPct))}>
+                    <td className={clsx("p-4 border-r font-medium", getNumColorClass(row.ytdPct))} style={{ borderColor: 'var(--card-border)' }}>
                         {formatPositive(row.ytdPct)}
                     </td>
-                    <td className={clsx("p-4 border-r border-gray-200 dark:border-gray-700", getNumColorClass(row.yoyNominal))}>
+                    <td className={clsx("p-4 border-r", getNumColorClass(row.yoyNominal))} style={{ borderColor: 'var(--card-border)' }}>
                         {formatPositive(row.yoyNominal)}
                     </td>
                     <td className={clsx("p-4 font-medium", getNumColorClass(row.yoyPct))}>
@@ -83,5 +92,6 @@ export const TableRow = memo(({ row, showDetails }: TableRowProps) => {
         </tr>
     );
 });
+
 
 TableRow.displayName = "TableRow";

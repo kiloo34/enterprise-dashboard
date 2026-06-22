@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import useSWR from "swr";
 import { api } from "@/utils/api";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export interface QrisRow {
     id: string;
@@ -20,6 +21,7 @@ interface TransactionsResponse {
 
 export function useQrisData(network: 'aj' | 'onus' | 'rintis', initialDateFilter?: string, onDateFilterChange?: (date: string) => void) {
     const [searchTerm, setSearchTerm] = useState("");
+    const debouncedSearchTerm = useDebounce(searchTerm, 300);
     const [filterBankStatus, setFilterBankStatus] = useState("ALL");
     const [filterReconStatus, setFilterReconStatus] = useState("ALL");
 
@@ -53,8 +55,8 @@ export function useQrisData(network: 'aj' | 'onus' | 'rintis', initialDateFilter
 
     const filteredData = useMemo(() => {
         return tableData.filter((row) => {
-            const searchLower = searchTerm.toLowerCase();
-            const matchesSearch = searchTerm === "" ||
+            const searchLower = debouncedSearchTerm.toLowerCase();
+            const matchesSearch = debouncedSearchTerm === "" ||
                 row.merchant.toLowerCase().includes(searchLower) ||
                 (row.stan && row.stan.toLowerCase().includes(searchLower));
 
@@ -67,7 +69,7 @@ export function useQrisData(network: 'aj' | 'onus' | 'rintis', initialDateFilter
 
             return matchesSearch && matchesBank && matchesRecon && matchesDate;
         });
-    }, [tableData, searchTerm, filterBankStatus, filterReconStatus, filterDate]);
+    }, [tableData, debouncedSearchTerm, filterBankStatus, filterReconStatus, filterDate]);
 
     const totalPages = Math.ceil(filteredData.length / rowsPerPage);
     const paginatedData = useMemo(() => {

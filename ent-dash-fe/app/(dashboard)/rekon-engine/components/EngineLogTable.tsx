@@ -4,21 +4,7 @@ import React from 'react';
 import { ExternalLink } from 'lucide-react';
 import { clsx } from 'clsx';
 import { DataTable, DataTableColumn } from '@/components/ui/DataTable';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-export type LogLevel = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';
-
-export interface EngineLog {
-    id: string;              // Primary Key tabel log
-    timestamp: string;       // Timestamp log direkam
-    engineName: string;      // Wildcard pada nama tabel (misal: 'qris' untuk engine_qris_log)
-    runId: string;           // Referensi ke ID eksekusi di tabel engine_*_his
-    level: LogLevel;         // Level severity
-    message: string;         // Pesan log/event
-    module: string;          // Modul atau langkah dalam eksekusi
-    tableName: string;       // Menyimpan sumber tabel fisik log (engine_*_log)
-    historyTable: string;    // Menyimpan sumber tabel fisik histori (engine_*_his)
-}
+import { EngineLog, LogLevel } from '@/types/recon';
 
 // ─── Level Badge ──────────────────────────────────────────────────────────────
 const LEVEL_STYLES: Record<LogLevel, string> = {
@@ -46,8 +32,8 @@ function TimestampCell({ timestamp }: { timestamp: string }) {
     const time = dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     return (
         <div className="font-mono text-[11px] leading-tight flex flex-col gap-0.5">
-            <div className="text-gray-900 dark:text-gray-200 font-bold">{date}</div>
-            <div className="text-gray-400 dark:text-gray-500">{time}</div>
+            <div className="font-bold" style={{ color: 'var(--text-primary)' }}>{date}</div>
+            <div style={{ color: 'var(--text-muted)' }}>{time}</div>
         </div>
     );
 }
@@ -56,10 +42,10 @@ function TimestampCell({ timestamp }: { timestamp: string }) {
 function EngineInfoCell({ log }: { log: EngineLog }) {
     return (
         <div className="flex flex-col gap-1">
-            <span className="font-mono text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/40 px-2 py-0.5 rounded-md w-fit border border-indigo-100/50 dark:border-indigo-800/50 uppercase tracking-tighter">
+            <span className="font-mono text-[10px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/40 px-2 py-0.5 rounded-md w-fit border border-indigo-100 dark:border-indigo-800/50 uppercase tracking-tighter">
                 {log.engineName}
             </span>
-            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-mono" title={`Histori di: ${log.historyTable}`}>RUN #{log.runId}</span>
+            <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }} title={`Histori di: ${log.historyTable}`}>RUN #{log.runId}</span>
         </div>
     );
 }
@@ -68,8 +54,8 @@ function EngineInfoCell({ log }: { log: EngineLog }) {
 function ModuleCell({ module, tableName }: { module: string; tableName: string }) {
     return (
         <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{module}</span>
-            <span className="text-[10px] text-gray-400 font-mono truncate max-w-[120px]">{tableName}</span>
+            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{module}</span>
+            <span className="text-[10px] font-mono truncate max-w-[120px]" style={{ color: 'var(--text-muted)' }}>{tableName}</span>
         </div>
     );
 }
@@ -78,7 +64,8 @@ function ModuleCell({ module, tableName }: { module: string; tableName: string }
 function MessageCell({ message }: { message: string }) {
     return (
         <div 
-            className="text-[12px] text-gray-600 dark:text-gray-400 max-w-md font-mono line-clamp-2 leading-relaxed"
+            className="text-[12px] max-w-md font-mono line-clamp-2 leading-relaxed"
+            style={{ color: 'var(--text-secondary)' }}
             title={message}
         >
             {message}

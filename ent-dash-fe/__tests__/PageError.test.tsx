@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { PageError } from '../app/components/ui/PageError';
+import { PageError } from '../components/ui/PageError';
 
 describe('PageError', () => {
     it('renders the default error title when no props provided', () => {

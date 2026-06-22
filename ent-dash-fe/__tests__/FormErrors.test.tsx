@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { FieldError, FormErrors } from '../app/components/ui/FormErrors';
+import { FieldError, FormErrors } from '../components/ui/FormErrors';
 
 describe('FieldError', () => {
     it('renders nothing when error is null', () => {

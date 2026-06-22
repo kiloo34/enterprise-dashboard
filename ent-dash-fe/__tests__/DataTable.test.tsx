@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { DataTable, DataTableColumn } from '../app/components/ui/DataTable';
+import { DataTable, DataTableColumn } from '../components/ui/DataTable';
+import { PageError } from '../components/ui/PageError';
 
 interface TestItem {
     id: number;

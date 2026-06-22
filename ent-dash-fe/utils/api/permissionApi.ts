@@ -1,85 +1,35 @@
-import axios from 'axios';
-import type { Permission } from "../../types/user";
+/**
+ * permissionApi — Permission Management API Client
+ *
+ * Migrated from Axios (K3 incompatible) to the shared api() utility
+ * which reads the in-memory token via window.__getAuthToken().
+ */
+import { api } from '../api';
+import type { Permission } from '../../types/role';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
-
-const getAuthHeaders = () => {
-    if (typeof window === 'undefined') return {};
-
-    try {
-        const storedUser = sessionStorage.getItem('auth-user');
-        if (storedUser) {
-            const user = JSON.parse(storedUser);
-            if (user && user.accessToken) {
-                return { Authorization: `Bearer ${user.accessToken}` };
-            }
-        }
-    } catch (e) {
-        console.error('Failed to parse auth user for token', e);
-    }
-
-    return {};
-};
-
-const axiosInstance = axios.create({
-    baseURL: API_URL.replace(/\/+$/, ''),
-    withCredentials: true,
-    headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-    }
-});
-
-axiosInstance.interceptors.request.use((config) => {
-    // Smart URL joining to avoid double /api
-    if (config.baseURL?.endsWith('/api') && config.url?.startsWith('/api/')) {
-        config.url = config.url.substring(4);
-    }
-
-    const headers = getAuthHeaders();
-    if (headers.Authorization) {
-        config.headers.Authorization = headers.Authorization;
-    }
-    return config;
-});
-
-// Add response interceptor to handle 401 Unauthorized
-axiosInstance.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response && error.response.status === 401) {
-            if (typeof window !== 'undefined') {
-                sessionStorage.removeItem('auth-user');
-                window.location.href = '/login';
-            }
-        }
-        return Promise.reject(error);
-    }
-);
+type ListResponse<T> = T[] | { data: T[] };
 
 export const permissionApi = {
-    getAll: async () => {
-        const response = await axiosInstance.get('/api/permissions');
-        return response.data;
-    },
+    getAll: () =>
+        api<ListResponse<Permission>>('/api/permissions'),
 
-    getById: async (id: number) => {
-        const response = await axiosInstance.get(`/api/permissions/${id}`);
-        return response.data;
-    },
+    getById: (id: number) =>
+        api<Permission>(`/api/permissions/${id}`),
 
-    create: async (data: Omit<Permission, 'id' | 'created_at' | 'updated_at'>) => {
-        const response = await axiosInstance.post('/api/permissions', data);
-        return response.data;
-    },
+    create: (data: Omit<Permission, 'id' | 'created_at' | 'updated_at'>) =>
+        api<Permission>('/api/permissions', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
 
-    update: async (id: number, data: Omit<Permission, 'id' | 'created_at' | 'updated_at'>) => {
-        const response = await axiosInstance.put(`/api/permissions/${id}`, data);
-        return response.data;
-    },
+    update: (id: number, data: Omit<Permission, 'id' | 'created_at' | 'updated_at'>) =>
+        api<Permission>(`/api/permissions/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        }),
 
-    delete: async (id: number) => {
-        const response = await axiosInstance.delete(`/api/permissions/${id}`);
-        return response.data;
-    }
+    delete: (id: number) =>
+        api<void>(`/api/permissions/${id}`, {
+            method: 'DELETE',
+        }),
 };

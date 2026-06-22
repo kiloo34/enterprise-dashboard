@@ -51,14 +51,17 @@ export default function SettingsPage() {
                                     className={clsx(
                                         "relative flex flex-col p-6 rounded-2xl border transition-all duration-300 text-left",
                                         isActive
-                                            ? "border-blue-600 bg-blue-50/30 ring-4 ring-blue-600/5 dark:bg-blue-900/10 dark:border-blue-500"
+                                            ? "ring-4 ring-[var(--brand-primary)]/5"
                                             : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
                                     )}
+                                    style={isActive ? { borderColor: 'var(--brand-primary)', background: 'color-mix(in srgb, var(--brand-primary) 10%, transparent)' } : {}}
                                 >
                                     <div className={clsx(
                                         "w-12 h-12 rounded-xl flex items-center justify-center mb-6 transition-colors",
-                                        isActive ? "bg-blue-600 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500"
-                                    )}>
+                                        isActive ? "text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500"
+                                    )}
+                                    style={isActive ? { background: 'var(--brand-primary)' } : {}}
+                                    >
                                         <Icon className="h-6 w-6" />
                                     </div>
 
@@ -67,7 +70,7 @@ export default function SettingsPage() {
                                             "font-bold text-lg",
                                             isActive ? "text-gray-900 dark:text-gray-100" : "text-gray-700 dark:text-gray-300"
                                         )}>{opt.label}</span>
-                                        {isActive && <div className="h-2.5 w-2.5 rounded-full bg-blue-600"></div>}
+                                        {isActive && <div className="h-2.5 w-2.5 rounded-full" style={{ background: 'var(--brand-primary)' }}></div>}
                                     </div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{opt.desc}</p>
                                 </button>
@@ -94,14 +97,17 @@ export default function SettingsPage() {
                                     className={clsx(
                                         "w-full flex items-center p-5 rounded-2xl border transition-all duration-300 text-left group",
                                         isActive
-                                            ? "border-blue-600 bg-blue-50/30 ring-4 ring-blue-600/5 dark:bg-blue-900/10 dark:border-blue-500"
+                                            ? "ring-4 ring-[var(--brand-primary)]/5"
                                             : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
                                     )}
+                                    style={isActive ? { borderColor: 'var(--brand-primary)', background: 'color-mix(in srgb, var(--brand-primary) 10%, transparent)' } : {}}
                                 >
                                     <div className={clsx(
                                         "p-4 rounded-xl mr-6 transition-all",
-                                        isActive ? "bg-blue-600 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-400 group-hover:text-gray-600"
-                                    )}>
+                                        isActive ? "text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-400 group-hover:text-gray-600"
+                                    )}
+                                    style={isActive ? { background: 'var(--brand-primary)' } : {}}
+                                    >
                                         <Icon className="h-6 w-6" />
                                     </div>
                                     <div className="flex-1">
@@ -113,7 +119,7 @@ export default function SettingsPage() {
                                     </div>
                                     <div className={clsx(
                                         "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                                        isActive ? "border-blue-600 bg-blue-600" : "border-gray-300 dark:border-gray-600"
+                                        isActive ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]" : "border-gray-300 dark:border-gray-600"
                                     )}>
                                         {isActive && <Check className="h-4 w-4 text-white" />}
                                     </div>

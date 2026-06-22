@@ -139,10 +139,11 @@ export function SearchableSelect({
                         aria-labelledby={ariaLabelledby}
                         disabled={disabled}
                         className={cn(
-                            'flex items-center justify-between w-full p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl transition-all shadow-sm outline-none',
-                            isOpen ? 'ring-2 ring-blue-500/20 border-blue-500' : 'hover:border-slate-300 dark:hover:border-slate-600',
-                            disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900/50' : 'cursor-pointer',
-                            !selectedOption ? 'text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-100'
+                            'flex items-center justify-between w-full p-3 rounded-xl transition-all shadow-sm outline-none backdrop-blur-sm',
+                            'bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)]',
+                            isOpen ? 'ring-2 ring-[var(--input-focus-ring)] border-blue-500' : 'hover:border-[var(--text-muted)]',
+                            disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                            !selectedOption ? 'text-[var(--input-placeholder)]' : ''
                         )}
                     >
                         <span className="truncate pr-4 font-medium">
@@ -154,7 +155,7 @@ export function SearchableSelect({
                                     role="button"
                                     tabIndex={0}
                                     aria-label="Clears selected option"
-                                    className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                                    className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors"
                                     onMouseDown={(e: React.MouseEvent) => {
                                         e.preventDefault();
                                         e.stopPropagation();
@@ -175,7 +176,7 @@ export function SearchableSelect({
             </PopoverTrigger>
 
             <PopoverContent
-                className="w-[var(--radix-popover-trigger-width)] p-0 z-[150] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl"
+                className="w-[var(--radix-popover-trigger-width)] p-0 z-[150] rounded-xl shadow-2xl border border-[var(--modal-border)] bg-[var(--modal-bg)]"
                 align="start"
                 sideOffset={4}
                 onOpenAutoFocus={(e) => {
@@ -184,9 +185,9 @@ export function SearchableSelect({
                 }}
             >
                 {/* Search Header */}
-                <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-2 border-b border-[var(--modal-border)]">
                     <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-slate-400" aria-hidden />
+                        <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-[var(--text-muted)]" aria-hidden />
                         <input
                             ref={searchInputRef}
                             type="text"
@@ -197,7 +198,11 @@ export function SearchableSelect({
                             aria-activedescendant={
                                 activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
                             }
-                            className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-transparent focus:bg-white dark:focus:bg-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg text-sm outline-none transition-all dark:text-white placeholder:text-slate-400"
+                            className={cn(
+                                "w-full pl-9 pr-3 py-2 border border-transparent rounded-lg text-sm outline-none transition-all",
+                                "bg-[var(--group-card-bg)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]",
+                                "focus:bg-[var(--modal-bg)] focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            )}
                             placeholder={searchPlaceholder}
                             value={searchQuery}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
@@ -215,14 +220,14 @@ export function SearchableSelect({
                     className="max-h-60 overflow-y-auto py-1 custom-scrollbar"
                 >
                     {filteredOptions.length === 0 ? (
-                        <li role="option" aria-selected={false} className="px-4 py-3 text-sm text-slate-400 text-center italic">
+                        <li role="option" aria-selected={false} className="px-4 py-3 text-sm text-[var(--text-muted)] text-center italic">
                             Tidak ada hasil
                         </li>
                     ) : (
                         groupKeys.map((group) => (
                             <React.Fragment key={group}>
                                 {group !== 'Other' && (
-                                    <li className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-800/30">
+                                    <li className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-[var(--modal-footer-bg)] text-[var(--text-muted)]">
                                         {group}
                                     </li>
                                 )}
@@ -238,12 +243,11 @@ export function SearchableSelect({
                                             aria-selected={isSelected}
                                             className={cn(
                                                 'px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center',
-                                                isActive && 'ring-2 ring-inset ring-blue-400',
                                                 isSelected
-                                                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-medium'
+                                                    ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 font-medium'
                                                     : isActive
-                                                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100'
-                                                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
+                                                        ? 'bg-[var(--card-bg-hover)] text-[var(--text-primary)]'
+                                                        : 'hover:bg-[var(--card-bg-hover)] text-[var(--text-secondary)]'
                                             )}
                                             onMouseEnter={() => setActiveIndex(actualIdx)}
                                             onMouseDown={(e: React.MouseEvent) => {
@@ -263,3 +267,4 @@ export function SearchableSelect({
         </Popover>
     );
 }
+

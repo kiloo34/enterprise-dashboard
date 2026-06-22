@@ -29,8 +29,8 @@ export const ReconciliationTemplate: React.FC<ReconciliationTemplateProps> = ({
 }) => {
 
     return (
-        <div className="flex flex-col min-h-screen">
-            <div className="flex-1 p-2 sm:p-4 lg:p-8 space-y-4 lg:space-y-6 overflow-x-hidden">
+        <div className="flex flex-col min-h-screen bg-transparent">
+            <div className="flex-1 p-6 lg:p-8 space-y-8 overflow-x-hidden">
                 <PageHeader
                     title={title}
                     description={description}
@@ -54,7 +54,7 @@ export const ReconciliationTemplate: React.FC<ReconciliationTemplateProps> = ({
                 </div>
 
                 {/* Footer Area */}
-                <div className="flex flex-col sm:flex-row items-center justify-between text-[10px] lg:text-xs text-gray-500 font-medium py-4 gap-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between text-[10px] lg:text-xs text-gray-500 dark:text-gray-400 font-medium py-4 gap-4">
                     <p className="text-center sm:text-left">
                         {footerText}
                     </p>
@@ -63,4 +63,5 @@ export const ReconciliationTemplate: React.FC<ReconciliationTemplateProps> = ({
             </div>
         </div>
     );
-};
+}
+;

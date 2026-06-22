@@ -41,7 +41,7 @@ export function PermissionTable({
         {
             key: 'name',
             header: t.table.name,
-            render: (p) => <div className="text-sm font-semibold text-gray-900 dark:text-white">{p.name}</div>,
+            render: (p) => <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{p.name}</div>,
         },
         {
             key: 'owner',
@@ -56,7 +56,7 @@ export function PermissionTable({
             key: 'description',
             header: t.table.description,
             render: (p) => (
-                <div className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 max-w-xs whitespace-normal">
+                <div className="text-sm line-clamp-2 max-w-xs whitespace-normal" style={{ color: 'var(--text-muted)' }}>
                     {p.description || '-'}
                 </div>
             ),
@@ -70,7 +70,8 @@ export function PermissionTable({
                     {canUpdate && (
                         <button
                             onClick={() => onEdit(p)}
-                            className="p-2 text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                            className="p-2 hover:text-blue-600 rounded-lg transition-colors"
+                            style={{ background: 'var(--group-card-bg)', color: 'var(--text-muted)' }}
                             title={t.form.editTitle}
                         >
                             <Edit2 className="w-4 h-4" />
@@ -79,7 +80,8 @@ export function PermissionTable({
                     {canDelete && (
                         <button
                             onClick={() => onDelete(p)}
-                            className="p-2 text-gray-500 hover:text-red-600 bg-gray-50 hover:bg-red-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                            className="p-2 hover:text-red-500 rounded-lg transition-colors"
+                            style={{ background: 'var(--group-card-bg)', color: 'var(--text-muted)' }}
                             title={t.delete.confirmTitle}
                         >
                             <Trash2 className="w-4 h-4" />

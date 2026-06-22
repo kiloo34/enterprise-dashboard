@@ -19,7 +19,14 @@ export function useSidebarNavigation() {
 
     const permissions = user?.permissions || [];
     const role = user?.role;
-    const isAdmin = role === "admin" || role === "super-admin";
+    const isAdmin = role === "admin" || role === "super-admin" || role === "administrator";
+    const isDireksiRole = role === "direksi";
+    const isOperasiRole = role === "divisi-operasi";
+
+    const unitCode = user?.unitCode || "";
+    const isDireksiUnit = ["DIR_UTAMA", "DIR_TI", "SEVP_TI"].includes(unitCode);
+    const isOperasiUnit = ["DIV_OPS"].includes(unitCode);
+    const isEDMUnit = unitCode === "EDM";
 
     // --- Permissions ---
     const canViewDashboardKeuangan = permissions.some((p: string) => p.startsWith('view-dashboard-keuangan-'));
@@ -131,6 +138,13 @@ export function useSidebarNavigation() {
         canViewRekonQrisRintis,
         canViewRekonQrisOnUs,
         canManageUser,
-        canManageRbac
+        canManageRbac,
+        isDireksiRole,
+        isOperasiRole,
+        isDireksiUnit,
+        isOperasiUnit,
+        isEDMUnit,
+        isAdmin,
+        user,
     };
 }

@@ -8,6 +8,10 @@ export interface MetricData {
     title: string;
     value: string | number;
     trend?: number;
+    dtd?: number;
+    mtd?: number;
+    ytd?: number;
+    yoy?: number;
     accentColor?: "blue" | "green" | "orange" | "red";
     isSafe?: boolean;
     useBigNumberFormat?: boolean;
@@ -38,6 +42,10 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({ metrics, columns = 4 }
                             : String(metric.value)
                     }
                     trend={metric.trend}
+                    dtd={metric.dtd}
+                    mtd={metric.mtd}
+                    ytd={metric.ytd}
+                    yoy={metric.yoy}
                     accentColor={metric.accentColor || "blue"}
                     isSafe={metric.isSafe}
                 />

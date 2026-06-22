@@ -22,6 +22,11 @@ COPY . .
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
+# Build arg for server-side proxy destination (Next.js rewrites in next.config.ts)
+# Default to http://traefik for Docker deployments
+ARG BACKEND_URL=http://traefik
+ENV BACKEND_URL=${BACKEND_URL}
+
 RUN npm run build
 
 # 3. Production image, copy all the files and run next

@@ -36,20 +36,20 @@ interface UserTableProps {
 function UserInfoCell({ user }: { user: User }) {
     const initial = user.name.charAt(0).toUpperCase();
     return (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
             <div
-                className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm shadow-sm shrink-0"
+                className="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-black text-sm shadow-inner shrink-0 border border-blue-100 dark:border-blue-500/20 group-hover:scale-110 transition-transform duration-500"
                 aria-hidden
             >
                 {initial}
             </div>
             <div className="min-w-0">
-                <div className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                <div className="font-bold tracking-tight text-[15px]" style={{ color: 'var(--text-primary)' }}>
                     {user.name}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{user.email}</div>
+                <div className="text-xs font-semibold mt-0.5 truncate opacity-70" style={{ color: 'var(--text-secondary)' }}>{user.email}</div>
                 {user.phone && (
-                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.phone}</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider mt-1 opacity-50" style={{ color: 'var(--text-muted)' }}>{user.phone}</div>
                 )}
             </div>
         </div>
@@ -58,11 +58,14 @@ function UserInfoCell({ user }: { user: User }) {
 
 function UserPositionCell({ user }: { user: User }) {
     return (
-        <div className="flex flex-col gap-1.5">
-            <div className="text-gray-900 dark:text-white font-medium text-sm truncate max-w-[160px]">
+        <div className="flex flex-col gap-2">
+            <div className="font-bold text-sm tracking-tight truncate max-w-[180px]" style={{ color: 'var(--text-primary)' }}>
                 {user.position?.name || '-'}
             </div>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm w-fit max-w-[160px] truncate">
+            <span 
+                className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-colors shadow-sm w-fit max-w-[180px] truncate"
+                style={{ background: 'var(--group-card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-muted)' }}
+            >
                 {user.organization_unit?.name || '-'}
             </span>
         </div>
@@ -71,14 +74,14 @@ function UserPositionCell({ user }: { user: User }) {
 
 function UserRolesCell({ user }: { user: User }) {
     if (!user.roles || user.roles.length === 0) {
-        return <span className="text-gray-400 text-xs italic">-</span>;
+        return <span className="text-[10px] font-bold opacity-30 italic uppercase" style={{ color: 'var(--text-muted)' }}>-</span>;
     }
     return (
-        <div className="flex flex-wrap gap-1.5 justify-center max-w-[200px] mx-auto">
+        <div className="flex flex-wrap gap-2 justify-center max-w-[240px] mx-auto">
             {user.roles.map(role => (
                 <span
                     key={role.id}
-                    className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-100 dark:border-blue-800/50 shadow-sm"
+                    className="inline-flex items-center px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-[0.05em] bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-sm hover:bg-blue-500/20 transition-colors"
                     title={role.name}
                 >
                     {role.name.replace('view-dashboard-', '')}
@@ -104,13 +107,12 @@ function UserActionButtons({
     editTitle, deleteTitle, onEdit, onDelete
 }: UserActionButtonsProps) {
     return (
-        <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
             {canManageRBAC && (
                 <button
                     onClick={() => { /* Module mapping — not yet implemented */ }}
-                    className="p-1.5 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
+                    className="p-2 text-[var(--text-muted)] hover:text-emerald-500 hover:bg-emerald-500/10 rounded-xl transition-all duration-300"
                     title="Mapping Module"
-                    aria-label="Mapping Module"
                 >
                     <ListTodo className="w-4 h-4" />
                 </button>
@@ -118,9 +120,8 @@ function UserActionButtons({
             {canUpdate && (
                 <button
                     onClick={() => onEdit(user)}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                    className="p-2 text-[var(--text-muted)] hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all duration-300"
                     title={editTitle}
-                    aria-label={`${editTitle} ${user.name}`}
                 >
                     <Edit2 className="w-4 h-4" />
                 </button>
@@ -128,9 +129,8 @@ function UserActionButtons({
             {canDelete && (
                 <button
                     onClick={() => onDelete(user)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                    className="p-2 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all duration-300"
                     title={deleteTitle}
-                    aria-label={`${deleteTitle} ${user.name}`}
                 >
                     <Trash2 className="w-4 h-4" />
                 </button>

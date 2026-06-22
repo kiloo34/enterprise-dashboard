@@ -17,6 +17,7 @@ interface QrisDataTableToolbarProps {
     isExportOpen: boolean;
     setIsExportOpen: (open: boolean) => void;
     exportRef: React.RefObject<HTMLDivElement | null>;
+    onExportCSV: () => void;
 }
 
 export function QrisDataTableToolbar({
@@ -26,16 +27,17 @@ export function QrisDataTableToolbar({
     filterBankStatus, setFilterBankStatus,
     filterReconStatus, setFilterReconStatus,
     isExportOpen, setIsExportOpen,
-    exportRef
+    exportRef, onExportCSV
 }: QrisDataTableToolbarProps) {
     return (
-        <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-gray-50/50 dark:bg-gray-900/50">
-            <div className="relative w-full xl:w-72 shrink-0">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <div className="p-5 border-b flex flex-col xl:flex-row xl:items-center justify-between gap-6 backdrop-blur-sm" style={{ background: 'color-mix(in srgb, var(--card-bg) 40%, transparent)', borderColor: 'var(--card-border)' }}>
+            <div className="relative w-full xl:w-80 shrink-0 group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] w-4 h-4 group-focus-within:text-[var(--brand-primary)] transition-colors" />
                 <input
                     type="text"
-                    placeholder="Search Merchant, STAN..."
-                    className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder-gray-400 dark:text-gray-200 transition-shadow"
+                    placeholder="Cari Merchant, STAN..."
+                    className="w-full pl-11 pr-4 py-2.5 text-sm border rounded-xl outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:border-[var(--brand-primary)]/50 transition-all font-semibold"
+                    style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)', color: 'var(--input-text)' }}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -60,7 +62,8 @@ export function QrisDataTableToolbar({
 
                 <input
                     type="date"
-                    className="w-full sm:w-auto shrink-0 px-2 sm:px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg text-xs sm:text-sm text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full sm:w-auto shrink-0 px-4 py-2.5 border rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20 font-semibold"
+                    style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)', color: 'var(--input-text)' }}
                     value={filterDate}
                     onChange={handleDateChange}
                 />
@@ -98,25 +101,29 @@ export function QrisDataTableToolbar({
                 <div className="relative w-full sm:w-auto shrink-0 text-right sm:text-left" ref={exportRef}>
                     <button
                         onClick={() => setIsExportOpen(!isExportOpen)}
-                        className="w-full sm:w-auto justify-center sm:justify-start whitespace-nowrap inline-flex items-center px-3 sm:px-4 py-2 bg-blue-600 rounded-lg text-xs sm:text-sm font-medium text-white hover:bg-blue-700 transition-all shadow-sm active:scale-95"
+                        className="w-full sm:w-auto justify-center sm:justify-start whitespace-nowrap inline-flex items-center px-6 py-2.5 bg-blue-600 rounded-xl text-xs sm:text-sm font-black text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 active:scale-95"
                     >
                         <Download className="w-4 h-4 sm:mr-2" />
-                        <span className="hidden sm:inline w-full">Export Data</span>
-                        <span className="inline sm:hidden w-full">Export</span>
+                        <span className="hidden sm:inline w-full">EXPORT DATA</span>
+                        <span className="inline sm:hidden w-full">EXPORT</span>
                         <ChevronDown className={clsx("w-4 h-4 ml-2 transition-transform", isExportOpen && "rotate-180")} />
                     </button>
 
                     {isExportOpen && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 py-1 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                            <button className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center transition-colors">
+                        <div className="absolute right-0 mt-3 w-56 rounded-2xl shadow-2xl z-50 py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 border backdrop-blur-xl" style={{ background: 'var(--modal-bg)', borderColor: 'var(--modal-border)' }}>
+                            <button 
+                                onClick={onExportCSV}
+                                className="w-full text-left px-5 py-3 text-sm font-bold hover:bg-[var(--card-bg-hover)] flex items-center transition-colors"
+                                style={{ color: 'var(--text-primary)' }}
+                            >
                                 <FileText className="w-4 h-4 mr-3 text-blue-500" />
                                 Export as CSV
                             </button>
-                            <button className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center transition-colors">
+                            <button className="w-full text-left px-5 py-3 text-sm font-bold hover:bg-[var(--card-bg-hover)] flex items-center transition-colors" style={{ color: 'var(--text-primary)' }}>
                                 <FileSpreadsheet className="w-4 h-4 mr-3 text-green-500" />
                                 Export as Excel
                             </button>
-                            <button className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center transition-colors">
+                            <button className="w-full text-left px-5 py-3 text-sm font-bold hover:bg-[var(--card-bg-hover)] flex items-center transition-colors" style={{ color: 'var(--text-primary)' }}>
                                 <FileIcon className="w-4 h-4 mr-3 text-red-500" />
                                 Export as PDF
                             </button>

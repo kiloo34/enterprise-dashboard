@@ -11,72 +11,149 @@
   --color-warning: #FF8A4C;
 }
 
-/* Display Density Controls */
-.size-compact {
-  font-size: 14px;
+/* ================================================
+   SEMANTIC DESIGN TOKENS - Auto-switch per mode
+   ================================================ */
+:root {
+  /* Card / Surface */
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --card-bg-hover: #f9fafb;
+
+  /* Text */
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+
+  /* Page background */
+  --page-bg: #f9fafb;
+  --page-bg-gradient: #f3f4f6;
+
+  /* ── Modal / Form ────────────────────────────── */
+  --modal-bg: #ffffff;
+  --modal-border: #e5e7eb;
+  --modal-footer-bg: #f9fafb;
+  --modal-header-bg: #ffffff;
+
+  /* ── Input / Form Controls ───────────────────── */
+  --input-bg: #ffffff;
+  --input-border: #e5e7eb;
+  --input-text: #111827;
+  --input-placeholder: #9ca3af;
+  --input-focus-ring: rgba(26, 86, 219, 0.2);
+
+  /* ── Labels ──────────────────────────────────── */
+  --label-color: #374151;
+  --label-muted: #6b7280;
+
+  /* ── Button (secondary/ghost) ────────────────── */
+  --btn-secondary-bg: #ffffff;
+  --btn-secondary-text: #374151;
+  --btn-secondary-border: #d1d5db;
+  --btn-secondary-hover-bg: #f9fafb;
+
+  /* ── Brand ───────────────────────────────────── */
+  --brand-primary: #1A56DB;
+  --brand-primary-hover: #1e429f;
 }
 
-.size-comfortable {
-  font-size: 16px;
+.dark {
+  /* Card / Surface */
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --card-bg-hover: rgba(255, 255, 255, 0.08);
+
+  /* Text */
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-muted: #9ca3af;
+
+  /* Page background */
+  --page-bg: #030712;
+  --page-bg-gradient: #0f172a;
+
+  /* ── Modal / Form ────────────────────────────── */
+  --modal-bg: #111827;
+  --modal-border: rgba(255, 255, 255, 0.08);
+  --modal-footer-bg: rgba(255, 255, 255, 0.03);
+  --modal-header-bg: #111827;
+
+  /* ── Input / Form Controls ───────────────────── */
+  --input-bg: rgba(255, 255, 255, 0.06);
+  --input-border: rgba(255, 255, 255, 0.1);
+  --input-text: #f9fafb;
+  --input-placeholder: #6b7280;
+  --input-focus-ring: rgba(26, 86, 219, 0.3);
+
+  /* ── Labels ──────────────────────────────────── */
+  --label-color: #d1d5db;
+  --label-muted: #9ca3af;
+
+  /* ── Button (secondary/ghost) ────────────────── */
+  --btn-secondary-bg: rgba(255, 255, 255, 0.06);
+  --btn-secondary-text: #d1d5db;
+  --btn-secondary-border: rgba(255, 255, 255, 0.12);
+  --btn-secondary-hover-bg: rgba(255, 255, 255, 0.1);
+
+  /* ── Permission group card ───────────────────── */
+  --group-card-bg: rgba(255, 255, 255, 0.04);
+  --group-card-border: rgba(255, 255, 255, 0.08);
+
+  /* ── Brand ───────────────────────────────────── */
+  --brand-primary: #3b82f6;
+  --brand-primary-hover: #60a5fa;
 }
 
-.size-large {
-  font-size: 18px;
-}
+/* ================================================
+   DISPLAY DENSITY CONTROLS
+   ================================================ */
+.size-compact  { font-size: 14px; }
+.size-comfortable { font-size: 16px; }
+.size-large   { font-size: 18px; }
 
-/* Global Theme Defaults */
+/* ================================================
+   GLOBAL THEME DEFAULTS
+   ================================================ */
+html,
 body {
-  @apply bg-white text-gray-900 antialiased;
+  height: 100%;
+  overflow: hidden;
 }
 
-/* Explicit Light Mode Vibrancy (Ensuring no bleed-through) */
-html:not(.dark) body {
-  background-color: #ffffff;
-  color: #111827;
-}
-
-.dark body {
-  @apply bg-gray-950 text-gray-100;
+body {
+  background: var(--page-bg);
+  color: var(--text-primary);
+  @apply antialiased transition-colors duration-300;
 }
 
 .dark {
   color-scheme: dark;
 }
 
-/* Theme-aware global transitions - selective for performance */
+/* ================================================
+   TRANSITIONS & ACCELERATION
+   ================================================ */
 body,
 .sidebar,
 .header,
-.card {
+.card,
+.backdrop-blur-md,
+.backdrop-blur-sm,
+.backdrop-blur-xl {
   @apply transition-colors duration-300;
+  transform: translateZ(0); /* Hardware acceleration for blur */
+  backface-visibility: hidden;
 }
 
-/* Base styles for dark mode borders and elements */
-.dark .border-gray-100,
-.dark .border-gray-200 {
-  @apply border-gray-800;
+/* ================================================
+   SCROLLBAR (dark mode)
+   ================================================ */
+.dark ::-webkit-scrollbar { width: 6px; height: 6px; }
+.dark ::-webkit-scrollbar-track { background: transparent; }
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 99px;
 }
-
-.dark .bg-white {
-  @apply bg-gray-900;
-}
-
-.dark .bg-gray-50 {
-  @apply bg-gray-950;
-}
-
-.dark .text-gray-900 {
-  @apply text-white;
-}
-
-.dark .text-gray-600 {
-  @apply text-gray-400;
-}
-
-.dark .text-gray-500 {
-  @apply text-gray-500;
-}
-
-.dark .hover\:bg-gray-50:hover {
-  @apply hover:bg-gray-800;
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.25);
 }

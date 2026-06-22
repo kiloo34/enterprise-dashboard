@@ -8,7 +8,7 @@ export default function OperasiLayout({
     children: React.ReactNode;
 }) {
     return (
-        <ProtectedRoute allowedRoles={["super-admin", "admin", "member"]} requiredUnitCode="DIV_OPS">
+        <ProtectedRoute allowedRoles={["super-admin", "admin", "member"]} requiredUnitCodes={["DIV_OPS"]}>
             {children}
         </ProtectedRoute>
     );

@@ -1,14 +1,4 @@
-/**
- * Centralized API Utility
- *
- * Handles all outgoing fetch requests with consistent headers,
- * authentication tokens, and error handling.
- *
- * Throws `ApiError` for non-2xx responses — consumers can:
- *   - Check `error.status` for the HTTP code
- *   - Check `error.fieldErrors` for Laravel validation field errors (422)
- *   - Check `error.code` for app-level error codes
- */
+import { toast } from 'sonner';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -34,27 +24,25 @@ export class ApiError extends Error {
 
 interface RequestOptions extends RequestInit {
     params?: Record<string, string>;
+    /** Whether to show a global error toast. Defaults to true. Set to false to handle errors locally. */
+    showErrorToast?: boolean;
 }
 
 export async function api<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const { params, headers, ...rest } = options;
+    const { params, headers, showErrorToast = true, ...rest } = options;
 
-    // Construct URL — supports both relative (/api/...) and absolute (http://...) paths.
-    // Intelligently handle cases where both BASE_URL and endpoint might have "/api"
     let rawUrl = "";
     const cleanBase = BASE_URL.replace(/\/+$/, "");
     const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
 
     if (cleanBase.endsWith("/api") && cleanEndpoint.startsWith("/api/")) {
-        // Remove duplicate /api
         rawUrl = `${cleanBase}${cleanEndpoint.substring(4)}`;
     } else {
         rawUrl = `${cleanBase}${cleanEndpoint}`;
     }
     
-    // Fallback if BASE_URL is empty: use absolute origin to bypass Next.js internal proxy timeout limit 
     if (!cleanBase && typeof window !== 'undefined') {
-        const origin = window.location.origin; // e.g. http://localhost:80
+        const origin = window.location.origin;
         rawUrl = `${origin}${cleanEndpoint}`;
     } else if (!cleanBase) {
         rawUrl = endpoint;
@@ -67,19 +55,18 @@ export async function api<T>(endpoint: string, options: RequestOptions = {}): Pr
     }
     const url = urlWithParams;
 
-    // Get Auth Token
-    const authData = typeof window !== "undefined" ? sessionStorage.getItem("auth-user") : null;
+    // K3 fix: Ambil token dari memory (window.__getAuthToken) — bukan dari sessionStorage.
+    // __getAuthToken di-expose oleh AuthContext via useRef, aman dari XSS.
     let token = "";
-    if (authData) {
-        try {
-            const parsed = JSON.parse(authData);
-            token = parsed.accessToken || "";
-        } catch (e) {
-            console.error("Failed to parse auth data for API token", e);
+    if (typeof window !== "undefined") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const memToken = (window as any).__getAuthToken?.();
+        if (memToken) {
+            token = memToken;
         }
     }
 
-    // Default Headers (Use a headers object we can mutate easily)
+
     const requestHeaders = new Headers(headers as HeadersInit);
 
     if (!requestHeaders.has("Accept")) {
@@ -90,10 +77,8 @@ export async function api<T>(endpoint: string, options: RequestOptions = {}): Pr
         requestHeaders.set("Authorization", `Bearer ${token}`);
     }
 
-    // Handle Content-Type specifically for FormData
     const isFormData = rest.body instanceof FormData;
     if (isFormData) {
-        // Let the browser set the Content-Type automatically with boundaries
         requestHeaders.delete("Content-Type");
     } else if (!requestHeaders.has("Content-Type")) {
         requestHeaders.set("Content-Type", "application/json");
@@ -102,20 +87,92 @@ export async function api<T>(endpoint: string, options: RequestOptions = {}): Pr
     const config: RequestInit = {
         ...rest,
         headers: requestHeaders,
+        credentials: rest.credentials || "include", // K2 fix: Always send cookies (refresh_token)
     };
 
     try {
         const response = await fetch(url.toString(), config);
 
         if (response.status === 401) {
-            // Removed forced redirect to allow components to handle 401 gracefully
-            throw new ApiError("Sesi Anda telah berakhir atau tidak valid (401 Unauthorized)", 401);
+            // Prevent infinite loop if the request that failed WAS the refresh request
+            if (url.toString().includes('/api/auth/refresh')) {
+                if (typeof window !== "undefined") {
+                    sessionStorage.removeItem("auth-user");
+                    sessionStorage.removeItem("auth-profile");
+                    if (!window.location.pathname.startsWith('/login')) {
+                        window.location.href = "/login?session_expired=1";
+                    }
+                }
+                throw new ApiError("Sesi Anda telah berakhir. Silakan login kembali.", 401);
+            }
+
+            // K2 fix: Attempt Silent Refresh
+            try {
+                // Gunakan native fetch untuk menghindari circular dependency dengan AuthService
+                const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                // ── Refresh returned a non-2xx (e.g. 401 = token truly expired) ──
+                if (!refreshRes.ok) {
+                    // Only invalidate session when the refresh token is actually rejected (4xx)
+                    // A 5xx means the auth service is down — don't log the user out.
+                    if (refreshRes.status >= 400 && refreshRes.status < 500) {
+                        if (typeof window !== "undefined") {
+                            sessionStorage.removeItem("auth-user");
+                            sessionStorage.removeItem("auth-profile");
+                            if (!window.location.pathname.startsWith('/login')) {
+                                window.location.href = "/login?session_expired=1";
+                            }
+                        }
+                        throw new ApiError("Sesi Anda telah berakhir. Silakan login kembali.", 401);
+                    }
+                    // 5xx / service down — propagate as a regular (non-session-ending) error
+                    throw new ApiError(`Auth service unavailable (${refreshRes.status})`, refreshRes.status);
+                }
+
+                const refreshData = await refreshRes.json();
+                const newToken = refreshData.access_token;
+
+                // Update token in memory
+                if (typeof window !== "undefined") {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    if ((window as any).__setAuthToken) {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (window as any).__setAuthToken(newToken);
+                    }
+                }
+
+                // Retry original request with new token
+                requestHeaders.set("Authorization", `Bearer ${newToken}`);
+                const retryConfig = { ...config, headers: requestHeaders };
+                const retryResponse = await fetch(url.toString(), retryConfig);
+                
+                if (!retryResponse.ok) {
+                     throw new Error("Retry failed"); // Fallback to normal error handling
+                }
+                
+                return await retryResponse.json() as T;
+            } catch (refreshError) {
+                // ── Network error (ECONNRESET, Failed to fetch, etc.) ──
+                // The auth service is unreachable — do NOT end the session.
+                // Just propagate the error so the caller can show a toast.
+                if (refreshError instanceof ApiError) {
+                    throw refreshError; // Already handled above (either 4xx redirect or 5xx)
+                }
+                // TypeError / network failure — service is down, keep session alive
+                throw new ApiError(
+                    "Koneksi ke server gagal. Periksa jaringan Anda.",
+                    0
+                );
+            }
         }
 
         if (!response.ok) {
             const errorBody = await response.json().catch(() => ({}));
 
-            // Laravel validation errors (422) contain per-field messages
             if (response.status === 422 && errorBody.errors) {
                 throw new ApiError(
                     errorBody.message || 'Validasi gagal',
@@ -133,12 +190,20 @@ export async function api<T>(endpoint: string, options: RequestOptions = {}): Pr
 
         return await response.json() as T;
     } catch (error) {
-        // Re-throw ApiError as-is; wrap unknown errors
-        if (error instanceof ApiError) throw error;
-        console.error(`API Request to ${endpoint} failed:`, error);
-        throw new ApiError(
-            error instanceof Error ? error.message : 'Network error',
-            0
-        );
+        if (error instanceof ApiError) {
+            // Global toast for non-validation errors
+            if (showErrorToast && error.status !== 422 && error.status !== 401) {
+                toast.error(error.message);
+            }
+            throw error;
+        }
+        
+        const message = error instanceof Error ? error.message : 'Kesalahan Jaringan';
+        if (showErrorToast) {
+            toast.error(message);
+        }
+        
+        throw new ApiError(message, 0);
     }
 }
+

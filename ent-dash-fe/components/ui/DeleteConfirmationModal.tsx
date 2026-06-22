@@ -59,12 +59,20 @@ export function DeleteConfirmationModal({
                     </div>
                 </DialogHeader>
 
-                <DialogFooter className="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 mt-6 flex gap-3 sm:justify-end border-t border-gray-100 dark:border-gray-800">
+                <DialogFooter
+                    className="px-6 py-4 mt-6 flex gap-3 sm:justify-end border-t"
+                    style={{ borderColor: 'var(--modal-border)', background: 'var(--modal-footer-bg)' }}
+                >
                     <button
                         type="button"
                         onClick={onClose}
                         disabled={isSubmitting}
-                        className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700 transition-colors"
+                        className="w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-xl border transition-colors"
+                        style={{
+                            background: 'var(--btn-secondary-bg)',
+                            color: 'var(--btn-secondary-text)',
+                            borderColor: 'var(--btn-secondary-border)',
+                        }}
                     >
                         {t.cancel}
                     </button>

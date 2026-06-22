@@ -254,11 +254,11 @@ export function EngineHistoryTable({
     );
 
     return (
-        <Card className="shadow-sm border-slate-200 dark:border-slate-800 h-full">
-            <CardHeader className="pb-0 border-b border-slate-100 dark:border-slate-800/60 mb-4 flex flex-row items-center justify-between">
+        <Card className="shadow-sm h-full border" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+            <CardHeader className="pb-0 border-b mb-4 flex flex-row items-center justify-between" style={{ borderColor: 'var(--card-border)' }}>
                 <div>
-                    <CardTitle className="text-lg">{t.historyTitle}</CardTitle>
-                    <CardDescription className="text-xs mb-4 mt-2">
+                    <CardTitle className="text-lg" style={{ color: 'var(--text-primary)' }}>{t.historyTitle}</CardTitle>
+                    <CardDescription className="text-xs mb-4 mt-2" style={{ color: 'var(--text-muted)' }}>
                         {t.historyDesc}
                     </CardDescription>
                 </div>
@@ -288,14 +288,15 @@ export function EngineHistoryTable({
                 <div className="flex flex-col sm:flex-row gap-4 mb-4 px-4 sm:px-0 pt-4 sm:pt-0">
                     <div className="relative flex-1">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <Search className="w-4 h-4 text-slate-400" />
+                            <Search className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                         </div>
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder={t.searchPlaceholder}
-                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full pl-9 p-3 shadow-sm transition-all"
+                            className="text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full pl-9 p-3 shadow-sm transition-all border"
+                            style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)', color: 'var(--input-text)' }}
                         />
                     </div>
                     <div className="w-full sm:w-[200px]">
@@ -332,9 +333,9 @@ export function EngineHistoryTable({
                     </div>
                 </div>
 
-                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                <div className="overflow-x-auto rounded-xl border" style={{ borderColor: 'var(--card-border)' }}>
                     <table className="w-full text-sm text-left whitespace-nowrap">
-                        <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 dark:text-slate-400">
+                        <thead className="text-xs uppercase" style={{ background: 'var(--card-bg-hover)', color: 'var(--text-secondary)' }}>
                             <tr>
                                 {isDynamicMode ? (
                                     dynamicColumns.map((col) => (
@@ -354,7 +355,7 @@ export function EngineHistoryTable({
                                 )}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-transparent">
+                        <tbody className="divide-y" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
                             {isDynamicMode && isDynamicLoading ? (
                                 <tr>
                                     <td colSpan={dynamicColumns.length || 6} className="px-6 py-12 text-center text-slate-500">

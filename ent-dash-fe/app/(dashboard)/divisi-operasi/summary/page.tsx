@@ -16,15 +16,15 @@ export default function OperationSummaryDashboard() {
     const td = useTranslation("Dashboard");
 
     return (
-        <div className="flex flex-col min-h-screen">
-            <div className="flex-1 p-4 lg:p-8 space-y-6">
+        <div className="flex flex-col min-h-screen bg-transparent">
+            <div className="flex-1 p-6 lg:p-8 space-y-8">
                 <PageHeader title={td.operations.title} />
 
                 {/* Collapsible Filters */}
                 <FilterBar type="qris" />
 
                 {/* Metrics Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                     <MetricCard
                         title={td.operations.metrics.totalQris}
                         value="920M"
@@ -47,9 +47,9 @@ export default function OperationSummaryDashboard() {
                 </div>
 
                 {/* Breakdown Charts Placeholder */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
-                        <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-6">{td.operations.charts.channelDistribution}</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="rounded-2xl border p-6 shadow-sm dark:shadow-xl" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+                        <h3 className="font-bold uppercase tracking-widest text-xs mb-6" style={{ color: 'var(--text-muted)' }}>{td.operations.charts.channelDistribution}</h3>
                         <div className="h-64">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
@@ -67,9 +67,15 @@ export default function OperationSummaryDashboard() {
                                         ))}
                                     </Pie>
                                     <Tooltip
-                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                        contentStyle={{ 
+                                            backgroundColor: 'var(--card-bg)', 
+                                            borderRadius: '12px', 
+                                            border: '1px solid var(--card-border)', 
+                                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' 
+                                        }}
+                                        itemStyle={{ color: 'var(--text-primary)' }}
                                     />
-                                    <Legend verticalAlign="bottom" height={36} />
+                                    <Legend verticalAlign="bottom" height={36} wrapperStyle={{ paddingTop: '20px', color: 'var(--text-muted)' }} />
                                 </PieChart>
                             </ResponsiveContainer>
                         </div>
@@ -77,7 +83,7 @@ export default function OperationSummaryDashboard() {
                 </div>
 
                 {/* Footer Area */}
-                <div className="flex flex-col sm:flex-row items-center justify-between text-[10px] lg:text-xs text-gray-500 font-medium py-4 gap-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between text-[10px] lg:text-xs font-medium py-4 gap-4" style={{ color: 'var(--text-muted)' }}>
                     <p className="text-center sm:text-left">
                         {td.footerInfo}
                     </p>

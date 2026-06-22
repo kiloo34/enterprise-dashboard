@@ -1,110 +1,73 @@
-import axios from 'axios';
-import { UserFormData } from '../../types/user';
+/**
+ * userApi — User Management API Client
+ *
+ * Migrated from Axios (K3 incompatible) to the shared api() utility
+ * which reads the in-memory token via window.__getAuthToken().
+ * This ensures the Bearer token is always sourced from memory (not sessionStorage),
+ * consistent with the K3 security fix in AuthContext.
+ */
+import { api } from '../api';
+import type { User, Role, OrganizationUnit, Position, UserFormData } from '../../types/user';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+// The backend can return a plain array OR a paginated { data: T[] } envelope
+type ListResponse<T> = T[] | { data: T[] };
 
-const getAuthHeaders = () => {
-    if (typeof window === 'undefined') return {};
-
-    try {
-        const storedUser = sessionStorage.getItem('auth-user');
-        if (storedUser) {
-            const user = JSON.parse(storedUser);
-            if (user && user.accessToken) {
-                return { Authorization: `Bearer ${user.accessToken}` };
-            }
-        }
-    } catch (e) {
-        console.error('Failed to parse auth user for token', e);
-    }
-
-    return {};
-};
-
-const axiosInstance = axios.create({
-    baseURL: API_URL.replace(/\/+$/, ''),
-    withCredentials: true,
-    headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-    }
-});
-
-axiosInstance.interceptors.request.use((config) => {
-    // Smart URL joining to avoid double /api
-    if (config.baseURL?.endsWith('/api') && config.url?.startsWith('/api/')) {
-        config.url = config.url.substring(4);
-    }
-
-    const headers = getAuthHeaders();
-    if (headers.Authorization) {
-        config.headers.Authorization = headers.Authorization;
-    }
-    return config;
-});
-
-// Add response interceptor to handle 401 Unauthorized
-axiosInstance.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response && error.response.status === 401) {
-            if (typeof window !== 'undefined') {
-                sessionStorage.removeItem('auth-user');
-                window.location.href = '/login';
-            }
-        }
-        return Promise.reject(error);
-    }
-);
+interface LookupsResponse {
+    roles: Role[];
+    positions: Position[];
+    organizationUnits: OrganizationUnit[];
+}
 
 export const userApi = {
-    // Get all users
-    getUsers: async (search?: string) => {
-        const response = await axiosInstance.get('/api/users', {
-            params: { search }
-        });
-        return response.data;
-    },
+    /** Get all users with optional search */
+    getUsers: (search?: string) =>
+        api<ListResponse<User>>('/api/users', {
+            params: search ? { search } : undefined,
+        }),
 
-    // Get a specific user
-    getUser: async (id: number) => {
-        const response = await axiosInstance.get(`/api/users/${id}`);
-        return response.data;
-    },
+    /** Get a single user by ID */
+    getUser: (id: number) =>
+        api<User>(`/api/users/${id}`),
 
-    // Create a new user
-    createUser: async (data: UserFormData) => {
-        const response = await axiosInstance.post('/api/users', data);
-        return response.data;
-    },
+    /** Create a new user */
+    createUser: (data: UserFormData) =>
+        api<User>('/api/users', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
 
-    // Update a user
-    updateUser: async (id: number, data: UserFormData) => {
-        const response = await axiosInstance.put(`/api/users/${id}`, data);
-        return response.data;
-    },
+    /** Update an existing user */
+    updateUser: (id: number, data: UserFormData) =>
+        api<User>(`/api/users/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        }),
 
-    // Delete a user
-    deleteUser: async (id: number) => {
-        const response = await axiosInstance.delete(`/api/users/${id}`);
-        return response.data;
-    },
+    /** Delete a user */
+    deleteUser: (id: number) =>
+        api<void>(`/api/users/${id}`, {
+            method: 'DELETE',
+        }),
 
-    // Get lookups for dropdowns (Roles, Positions, OrganizationUnits)
-    getLookups: async () => {
-        // Fetch parallel data for dependent dropdowns
-        const [rolesRes, positionsRes, unitsRes] = await Promise.all([
-            axiosInstance.get('/api/roles'), // Assuming this returns roles via role resource
-            // Mocks for now, since we haven't created the endpoints for positions and units. 
-            // In a real app we'd query /api/positions and /api/organization-units 
-            axiosInstance.get('/api/positions').catch(() => ({ data: { data: [] } })),
-            axiosInstance.get('/api/organization-units').catch(() => ({ data: { data: [] } }))
+    /** Get lookup data: roles, positions, org-units */
+    getLookups: async (): Promise<LookupsResponse> => {
+        const [rolesRes, positionsRes, unitsRes] = await Promise.allSettled([
+            api<ListResponse<Role>>('/api/roles'),
+            api<ListResponse<Position>>('/api/positions'),
+            api<ListResponse<OrganizationUnit>>('/api/organization-units'),
         ]);
 
-        return {
-            roles: rolesRes.data?.data || [],
-            positions: positionsRes.data?.data || [],
-            organizationUnits: unitsRes.data?.data || []
+        const extractData = <T>(res: PromiseSettledResult<ListResponse<T>>): T[] => {
+            if (res.status === 'rejected') return [];
+            const val = res.value;
+            if (Array.isArray(val)) return val;
+            return (val as { data: T[] }).data ?? [];
         };
-    }
+
+        return {
+            roles: extractData(rolesRes),
+            positions: extractData(positionsRes),
+            organizationUnits: extractData(unitsRes),
+        };
+    },
 };

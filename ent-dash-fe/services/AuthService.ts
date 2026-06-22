@@ -42,6 +42,7 @@ export class AuthService {
         const raw = await api<RawLoginResponse>("/api/auth/login", {
             method: "POST",
             body: JSON.stringify({ email, password }),
+            credentials: "include", // Ensure cookie is saved
         });
 
         return {
@@ -52,9 +53,34 @@ export class AuthService {
     }
 
     /**
-     * Clear auth session
+     * K2 fix: Request token baru menggunakan refresh token cookie
      */
-    static logout(): void {
-        sessionStorage.removeItem("auth-user");
+    static async refreshToken(): Promise<LoginResponse> {
+        const raw = await api<RawLoginResponse>("/api/auth/refresh", {
+            method: "POST",
+            credentials: "include", // Important: send HttpOnly cookie
+            showErrorToast: false, // Silent failure, handled by interceptor/AuthContext
+        });
+
+        return {
+            accessToken: raw.access_token,
+            tokenType: raw.token_type,
+            user: raw.user,
+        };
+    }
+
+    /**
+     * Clear auth session in backend to remove cookie
+     */
+    static async logout(): Promise<void> {
+        try {
+            await api("/api/auth/logout", {
+                method: "POST",
+                credentials: "include",
+                showErrorToast: false,
+            });
+        } catch (e) {
+            console.error("Logout backend failed", e);
+        }
     }
 }

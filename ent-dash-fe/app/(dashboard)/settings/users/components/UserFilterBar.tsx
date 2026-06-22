@@ -41,17 +41,16 @@ export function UserFilterBar({
     ];
 
     return (
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="rounded-2xl border shadow-sm dark:shadow-xl overflow-hidden transition-all backdrop-blur-sm p-4 lg:p-5 flex flex-col sm:flex-row gap-4 lg:gap-6" style={{ background: 'color-mix(in srgb, var(--card-bg) 70%, transparent)', borderColor: 'var(--card-border)' }}>
             {/* Search Input */}
-            <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                    <Search className="w-5 h-5 text-gray-400" aria-hidden />
-                </div>
+            <div className="relative flex-1 group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-focus-within:text-[var(--brand-primary)] transition-colors" aria-hidden />
                 <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full pl-11 p-3.5 shadow-sm transition-all"
+                    className="w-full pl-11 pr-4 py-2.5 text-sm border rounded-xl outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:border-[var(--brand-primary)]/50 transition-all font-semibold"
+                    style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)', color: 'var(--input-text)' }}
                     placeholder={t.searchPlaceholder}
                     aria-label={t.searchPlaceholder}
                 />
@@ -66,7 +65,6 @@ export function UserFilterBar({
                         onChange={onRoleChange}
                         placeholder="Semua Akses (Role)"
                         searchPlaceholder="Cari role..."
-                        aria-label="Filter berdasarkan role"
                     />
                 </div>
                 <div className="w-full sm:w-[200px]">
@@ -76,7 +74,6 @@ export function UserFilterBar({
                         onChange={onUnitChange}
                         placeholder="Semua Unit"
                         searchPlaceholder="Cari unit..."
-                        aria-label="Filter berdasarkan unit kerja"
                     />
                 </div>
             </div>

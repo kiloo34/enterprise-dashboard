@@ -75,10 +75,20 @@ export function DataTable<T>({
     const showPagination = !hidePagination && !isLoading && totalItems > 0;
 
     return (
-        <div className={clsx('bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden', className)}>
+        <div
+            className={clsx('rounded-2xl shadow-sm overflow-hidden transition-colors', className)}
+            style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
+        >
             <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                    <thead className="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-900/50 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                <table className="w-full text-sm text-left" style={{ color: 'var(--text-secondary)' }}>
+                    <thead
+                        className="text-xs uppercase border-b"
+                        style={{
+                            color: 'var(--text-muted)',
+                            background: 'var(--modal-footer-bg)',
+                            borderColor: 'var(--card-border)'
+                        }}
+                    >
                         <tr>
                             {columns.map(col => (
                                 <th
@@ -96,21 +106,21 @@ export function DataTable<T>({
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                    <tbody className="divide-y" style={{ borderColor: 'var(--card-border)' }}>
                         {isLoading ? (
                             <TableLoadingSkeleton rows={skeletonRows} cols={columns.length} />
                         ) : data.length === 0 ? (
                             <tr>
                                 <td colSpan={columns.length} className="px-6 py-16 text-center">
                                     {emptyIcon && <div className="flex justify-center mb-3">{emptyIcon}</div>}
-                                    <p className="text-gray-400 dark:text-gray-500 text-sm">{emptyText}</p>
+                                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{emptyText}</p>
                                 </td>
                             </tr>
                         ) : (
                             pageData.map(row => (
                                 <tr
                                     key={rowKey(row)}
-                                    className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors group"
+                                    className="transition-colors group hover:bg-[var(--card-bg-hover)]"
                                 >
                                     {columns.map(col => (
                                         <td
@@ -133,56 +143,61 @@ export function DataTable<T>({
 
             {/* ─── Pagination Footer ─── */}
             {showPagination && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-900/30">
-
+                <div
+                    className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t"
+                    style={{ borderColor: 'var(--card-border)', background: 'var(--modal-footer-bg)' }}
+                >
                     {/* Left: rows per page + total info */}
-                    <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--text-muted)' }}>
                         <span className="whitespace-nowrap">Tampilkan</span>
                         <select
                             value={pageSize}
                             onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
-                            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors cursor-pointer"
+                            className="rounded-lg text-sm px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors cursor-pointer border"
+                            style={{
+                                background: 'var(--input-bg)',
+                                color: 'var(--input-text)',
+                                borderColor: 'var(--input-border)',
+                            }}
                         >
                             {pageSizeOptions.map(opt => (
                                 <option key={opt} value={opt}>{opt}</option>
                             ))}
                         </select>
                         <span className="whitespace-nowrap">data per halaman</span>
-                        <span className="hidden sm:inline text-gray-300 dark:text-gray-600">•</span>
+                        <span className="hidden sm:inline" style={{ color: 'var(--card-border)' }}>•</span>
                         <span className="hidden sm:inline whitespace-nowrap">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">{startIndex + 1}–{endIndex}</span>
+                            <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{startIndex + 1}–{endIndex}</span>
                             {' '}dari{' '}
-                            <span className="font-medium text-gray-700 dark:text-gray-300">{totalItems}</span>
+                            <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{totalItems}</span>
                             {' '}entri
                         </span>
                     </div>
 
                     {/* Right: page navigation */}
                     <div className="flex items-center gap-1.5">
-                        {/* First page */}
                         <button
                             onClick={() => goTo(1)}
                             disabled={safePage === 1}
-                            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            className="p-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors hover:bg-[var(--card-bg-hover)]"
+                            style={{ color: 'var(--text-muted)' }}
                             title="Halaman pertama"
                         >
                             <ChevronsLeft className="w-4 h-4" />
                         </button>
 
-                        {/* Prev */}
                         <button
                             onClick={() => goTo(safePage - 1)}
                             disabled={safePage === 1}
-                            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            className="p-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors hover:bg-[var(--card-bg-hover)]"
+                            style={{ color: 'var(--text-muted)' }}
                             title="Sebelumnya"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
 
-                        {/* Page numbers */}
                         <div className="flex items-center gap-1">
                             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                // sliding window of up to 5 page numbers centered on current
                                 let start = Math.max(1, safePage - 2);
                                 const end = Math.min(totalPages, start + 4);
                                 start = Math.max(1, end - 4);
@@ -195,29 +210,30 @@ export function DataTable<T>({
                                         'min-w-[2rem] h-8 px-2 rounded-lg text-sm font-medium transition-all',
                                         page === safePage
                                             ? 'bg-blue-600 text-white shadow-sm'
-                                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                            : 'hover:bg-[var(--card-bg-hover)]'
                                     )}
+                                    style={page !== safePage ? { color: 'var(--text-secondary)' } : undefined}
                                 >
                                     {page}
                                 </button>
                             ))}
                         </div>
 
-                        {/* Next */}
                         <button
                             onClick={() => goTo(safePage + 1)}
                             disabled={safePage === totalPages}
-                            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            className="p-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors hover:bg-[var(--card-bg-hover)]"
+                            style={{ color: 'var(--text-muted)' }}
                             title="Berikutnya"
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>
 
-                        {/* Last page */}
                         <button
                             onClick={() => goTo(totalPages)}
                             disabled={safePage === totalPages}
-                            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            className="p-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors hover:bg-[var(--card-bg-hover)]"
+                            style={{ color: 'var(--text-muted)' }}
                             title="Halaman terakhir"
                         >
                             <ChevronsRight className="w-4 h-4" />
@@ -228,3 +244,4 @@ export function DataTable<T>({
         </div>
     );
 }
+

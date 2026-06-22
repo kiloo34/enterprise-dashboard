@@ -1,4 +1,5 @@
 export interface DataRow {
+    slug: string;
     label: string;
     level?: number; // 0 = main, 1 = sub, 2 = sub-sub
     isBold?: boolean;
@@ -8,6 +9,8 @@ export interface DataRow {
     kelompok?: string;
     segment?: string;
     isAjp?: boolean;
+    isVisible: boolean;
+    isDeleted: boolean;
     valueR1: string | number;
     valueR2: string | number;
     valueR3: string | number;

@@ -35,11 +35,11 @@ export function QrisDiscrepancyChart({ settled, unsettled, discrepancy }: QrisCh
     };
 
     return (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 flex flex-col h-[350px]">
+        <div className="relative overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 dark:backdrop-blur-sm p-6 flex flex-col h-[350px] shadow-sm dark:shadow-xl">
             <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h3 className="font-bold text-gray-900 dark:text-white text-sm">{td.operations.rekonStatus.title}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{td.operations.rekonStatus.subtitle}</p>
+                <div className="space-y-1">
+                    <h3 className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest">{td.operations.rekonStatus.title}</h3>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-500 font-medium">{td.operations.rekonStatus.subtitle}</p>
                 </div>
             </div>
 
@@ -62,13 +62,20 @@ export function QrisDiscrepancyChart({ settled, unsettled, discrepancy }: QrisCh
                         </Pie>
                         <RechartsTooltip
                             formatter={tooltipFormatter}
-                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            contentStyle={{
+                                backgroundColor: 'var(--card-bg, #fff)',
+                                borderRadius: '12px',
+                                border: '1px solid var(--card-border, #e5e7eb)',
+                                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                                color: 'var(--text-primary, #111827)',
+                            }}
+                            itemStyle={{ color: 'inherit' }}
                         />
                         <Legend
                             verticalAlign="bottom"
                             height={36}
                             iconType="circle"
-                            wrapperStyle={{ fontSize: '12px', fontWeight: 500 }}
+                            wrapperStyle={{ fontSize: '11px', fontWeight: 600, paddingTop: '10px' }}
                         />
                     </PieChart>
                 </ResponsiveContainer>
@@ -77,7 +84,7 @@ export function QrisDiscrepancyChart({ settled, unsettled, discrepancy }: QrisCh
                 <div className="absolute inset-0 flex items-center justify-center -mt-6 pointer-events-none">
                     <div className="text-center">
                         <p className="text-[10px] text-gray-500 font-bold tracking-wider uppercase">{td.operations.rekonStatus.unsettled}</p>
-                        <p className="text-lg font-black text-gray-900 dark:text-white">{unsettledPct}%</p>
+                        <p className="text-xl font-black text-gray-900 dark:text-white">{unsettledPct}%</p>
                     </div>
                 </div>
             </div>

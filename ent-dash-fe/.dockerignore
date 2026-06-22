@@ -1,0 +1,34 @@
+# Build artifacts
+.next
+.swc
+out
+
+# Dependencies (installed fresh during docker build)
+node_modules
+.npm-cache
+
+# Dev tooling
+.DS_Store
+*.log
+lint_output.txt
+*.txt
+
+# Git & IDE
+.git
+.gitignore
+.eslintcache
+*.md
+README.md
+
+# Tests
+__tests__
+jest.config.*
+jest.setup.*
+coverage
+
+# Type info (not needed in image)
+tsconfig.tsbuildinfo
+
+# env files (injected at runtime)
+.env*
+!.env.example
