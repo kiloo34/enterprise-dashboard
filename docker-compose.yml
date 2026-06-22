@@ -61,6 +61,9 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - SECRET_KEY=${SECRET_KEY}
       - CELERY_BROKER_URL=redis://redis:6379/0
+      - ENGINE_DATABASE_URI=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:5432/ent_dash_engine
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
+      - KAFKA_TOPIC_DATA_PROCESSED=engine.data_processed
     volumes:
       - recon_uploads:/app/storage/app/imports
     depends_on:
@@ -74,31 +77,32 @@ services:
     restart: always
 
   # ─── Recon Celery Worker ──────────────────────────────────────────────────
-  # Dinonaktifkan sementara: app/worker.py punya include=[] (belum ada task).
-  # Aktifkan kembali setelah task pertama Recon ditambahkan di app/tasks/.
-  # celery_worker:
-  #   build:
-  #     context: ./ent-dash-recon
-  #     dockerfile: Dockerfile
-  #     additional_contexts:
-  #       common: ./ent-dash-common
-  #   image: ent-dash-recon:latest
-  #   container_name: ent_dash_celery
-  #   command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=2
-  #   environment:
-  #     - POSTGRES_SERVER=db
-  #     - POSTGRES_USER=postgres
-  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pekalongan12}
-  #     - POSTGRES_DB=ent_dash_recon
-  #     - POSTGRES_PORT=5432
-  #     - SECRET_KEY=${SECRET_KEY:-base64:8C1LsxaMh5a+r++t8oTD0iQllugGC8CF7iWam/Tfaww=}
-  #     - CELERY_BROKER_URL=redis://redis:6379/0
-  #   volumes:
-  #     - recon_uploads:/app/storage/app/imports
-  #   depends_on:
-  #     - redis
-  #     - db
-  #   restart: always
+  celery_worker:
+    build:
+      context: ./ent-dash-recon
+      dockerfile: Dockerfile
+      additional_contexts:
+        common: ./ent-dash-common
+    image: ent-dash-recon:latest
+    container_name: ent_dash_celery
+    command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pekalongan12}
+      - POSTGRES_DB=ent_dash_recon
+      - POSTGRES_PORT=5432
+      - SECRET_KEY=${SECRET_KEY:-base64:8C1LsxaMh5a+r++t8oTD0iQllugGC8CF7iWam/Tfaww=}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - ENGINE_DATABASE_URI=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-pekalongan12}@db:5432/ent_dash_engine
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
+      - KAFKA_TOPIC_DATA_PROCESSED=engine.data_processed
+    volumes:
+      - recon_uploads:/app/storage/app/imports
+    depends_on:
+      - redis
+      - db
+    restart: always
 
   iam:
     build:

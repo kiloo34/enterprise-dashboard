@@ -42,6 +42,14 @@ class Settings(BaseSettings):
     def engine_grpc_address(self) -> str:
         return f"{self.ENGINE_GRPC_HOST}:{self.ENGINE_GRPC_PORT}"
 
+    # Redis Integration for Caching
+    REDIS_HOST: str = "redis"
+    REDIS_PORT: int = 6379
+
+    @property
+    def redis_url(self) -> str:
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}"
+
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:8080,http://localhost"
 

@@ -113,3 +113,28 @@ async def get_current_user_from_refresh_token(
     if user is None:
         raise credentials_exception
     return user
+
+
+def require_permissions(required_permissions: list[str]):
+    """
+    Returns a dependency that checks if the current user has the required permissions.
+    Super Admin role bypasses all checks.
+    """
+    def permission_checker(current_user: User = Depends(get_current_user)) -> User:
+        user_permissions = set()
+        for role in current_user.roles:
+            if role.name in ["Super Admin", "super-admin"]:
+                return current_user
+            for perm in role.permissions:
+                user_permissions.add(perm.name)
+        
+        missing_perms = [p for p in required_permissions if p not in user_permissions]
+        if missing_perms:
+            from fastapi import HTTPException, status
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Not enough permissions. Missing: {', '.join(missing_perms)}"
+            )
+        return current_user
+    
+    return permission_checker

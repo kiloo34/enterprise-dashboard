@@ -49,12 +49,4 @@ class UserService:
         await self.db.refresh(user)
         return user
 
-    async def get_positions(self) -> List[Position]:
-        """Retrieve all available positions."""
-        result = await self.db.execute(select(Position))
-        return result.scalars().all()
 
-    async def get_organization_units(self) -> List[OrganizationUnit]:
-        """Retrieve all available organization units."""
-        result = await self.db.execute(select(OrganizationUnit))
-        return result.scalars().all()

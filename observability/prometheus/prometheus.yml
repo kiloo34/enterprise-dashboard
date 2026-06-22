@@ -1,23 +1,30 @@
 global:
   scrape_interval: 15s
+  evaluation_interval: 15s
 
 scrape_configs:
   - job_name: 'prometheus'
+    metrics_path: /metrics
     static_configs:
       - targets: ['localhost:9090']
 
   - job_name: 'ent_dash_iam'
+    metrics_path: /metrics
     static_configs:
       - targets: ['iam:8000']
 
   - job_name: 'ent_dash_analytics'
+    metrics_path: /metrics
     static_configs:
       - targets: ['analytics:8000']
 
   - job_name: 'ent_dash_engine'
+    metrics_path: /metrics
     static_configs:
       - targets: ['engine:8000']
 
   - job_name: 'ent_dash_recon'
+    metrics_path: /metrics
     static_configs:
-      - targets: ['recon:8000']
+      # Container hostname is ent_dash_recon_api (service name in compose has no alias 'recon')
+      - targets: ['ent_dash_recon_api:8000']

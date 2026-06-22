@@ -11,6 +11,7 @@ from app.api.main import api_router
 from app.core.events import start_kafka_consumer, stop_kafka_consumer
 from app.core.grpc_client import init_grpc_channel, close_grpc_channel
 from app.db.init_db import init_db
+from app.core.cache import init_redis, close_redis
 
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -36,6 +37,9 @@ async def lifespan(app: FastAPI):
     # Init gRPC singleton channel
     await init_grpc_channel(settings.engine_grpc_address)
 
+    # Init Redis connection pool
+    await init_redis()
+
     # C5 fix: Gunakan asyncio.Event untuk shutdown graceful yang tidak hang.
     # consumer_task di-cancel saat shutdown, bukan di-await selamanya.
     stop_event = asyncio.Event()
@@ -54,6 +58,7 @@ async def lifespan(app: FastAPI):
         pass
 
     await close_grpc_channel()
+    await close_redis()
     logger.info("[Analytics] Shutdown complete.")
 
 

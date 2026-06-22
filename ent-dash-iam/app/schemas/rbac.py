@@ -8,7 +8,11 @@ class PermissionBase(BaseModel):
     description: Optional[str] = None
     owner: Optional[str] = None
 
+class PermissionCreate(PermissionBase):
+    pass
 
+class PermissionUpdate(PermissionBase):
+    pass
 class PermissionResponse(PermissionBase):
     id: int
 

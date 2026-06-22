@@ -189,6 +189,14 @@ def _process_csv_sync(import_id: str, object_name: str, target_table: str):
                 key=import_id,
                 client_id="ent-dash-engine-worker",
             )
+            
+            # Publish real-time notification via Redis PubSub
+            import redis
+            r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
+            import json
+            msg = json.dumps({"type": "success", "message": f"Import {import_id} completed", "details": f"{processed_rows} rows processed successfully."})
+            r.publish("notifications", json.dumps({"type": "message", "data": msg}))
+            r.close()
 
         except Exception as e:
             db.rollback()

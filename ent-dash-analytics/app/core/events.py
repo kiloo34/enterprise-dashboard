@@ -85,5 +85,6 @@ async def _handle_event(topic: str, payload: Dict[str, Any]):
         # If the backend engine just finished importing fact_kinerjaprc
         if "fact_kinerjaprc" in target_table.lower():
             logger.info("[Kafka Consumer] FactKinerjaPrc data updated! Triggering metric sync...")
-            from app.services.sync import sync_dashboard_metrics_from_engine
-            await sync_dashboard_metrics_from_engine()
+            from app.services.sync import SyncService
+            await SyncService().sync_dashboard_metrics()
+

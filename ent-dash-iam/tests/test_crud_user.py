@@ -78,7 +78,7 @@ async def test_update_password_rehashes(db_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_update_without_password_preserves_hash(db_session: AsyncSession):
-    user_in = _make_user_create(email="preserve@test.com", password="Stable!")
+    user_in = _make_user_create(email="preserve@test.com", password="Stable12!")
     user_obj = await crud_user.create(db_session, obj_in=user_in)
     original_hash = user_obj.password
 

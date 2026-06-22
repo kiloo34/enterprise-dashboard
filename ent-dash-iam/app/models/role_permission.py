@@ -1,24 +1,33 @@
-from sqlalchemy import Column, String, BigInteger, ForeignKey
+from sqlalchemy import Column, String, BigInteger, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
+from datetime import datetime
 
 
 class Role(Base):
     __tablename__ = "roles"
     __table_args__ = {"schema": "app"}
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    name = Column(String(255), nullable=False)
-    guard_name = Column(String(255), nullable=False)
+    id = Column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, index=True, autoincrement=True)
+    name = Column(String, unique=True, index=True, nullable=False)
+    guard_name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    permissions = relationship("Permission", secondary="app.role_has_permissions", viewonly=True)
+    # Relationship to permissions
+    permissions = relationship(
+        "Permission",
+        secondary="app.role_has_permissions",
+        primaryjoin="foreign(Role.id) == RoleHasPermission.role_id",
+        secondaryjoin="foreign(Permission.id) == RoleHasPermission.permission_id",
+    )
 
 
 class Permission(Base):
     __tablename__ = "permissions"
     __table_args__ = {"schema": "app"}
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, index=True, autoincrement=True)
     name = Column(String(255), nullable=False)
     guard_name = Column(String(255), nullable=False)
     description = Column(String(500), nullable=True)

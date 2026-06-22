@@ -11,6 +11,7 @@ from app.models.user import User, Position, OrganizationUnit            # noqa: 
 from app.models.role_permission import (                                  # noqa: F401
     Role, Permission, ModelHasRole, RoleHasPermission
 )
+from app.models.audit_log import AuditLog                                # noqa: F401
 from app.models.system_config import SystemConfig                        # noqa: F401
 from app.core.security import get_password_hash                          # noqa: F401
 

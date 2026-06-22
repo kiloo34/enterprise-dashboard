@@ -11,6 +11,10 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from app.db.base_class import Base
 
+# Ensure all models are imported before create_all
+import app.models.user
+import app.models.role_permission
+
 
 # ── SQLite in-memory engine ────────────────────────────────────────────────────
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -30,6 +34,8 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     )
 
     async with engine.begin() as conn:
+        from sqlalchemy import text
+        await conn.execute(text("ATTACH DATABASE ':memory:' AS app"))
         await conn.run_sync(Base.metadata.create_all)
 
     session_factory = async_sessionmaker(

@@ -9,9 +9,12 @@ Covers:
 """
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.crud.crud_role import role as crud_role
 from app.crud.crud_permission import permission as crud_permission
+from app.models.role_permission import Role, Permission
 from app.schemas.rbac import RoleCreate, RoleUpdate, PermissionCreate
 
 
@@ -68,7 +71,9 @@ async def test_update_role_syncs_permissions(db_session: AsyncSession):
         obj_in=RoleUpdate(name="sync-test", guard_name="api", permissions=[perm_new.id])
     )
 
-    perm_ids_after = {p.id for p in updated.permissions}
+    stmt = select(Role).where(Role.id == updated.id).options(selectinload(Role.permissions))
+    updated_loaded = (await db_session.execute(stmt)).scalar_one()
+    perm_ids_after = {p.id for p in updated_loaded.permissions}
     assert perm_old.id not in perm_ids_after
     assert perm_new.id in perm_ids_after
 

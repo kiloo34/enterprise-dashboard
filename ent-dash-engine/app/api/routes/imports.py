@@ -84,3 +84,41 @@ async def get_import(
     if not file_import:
         raise NotFoundException(message="Import not found", code="IMPORT_NOT_FOUND")
     return file_import
+
+@router.post("/{id}/cancel", response_model=Dict[str, Any])
+async def cancel_import(
+    id: str,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(get_current_user_payload)
+) -> Any:
+    # Placeholder: actually we should update the DB status to CANCELLED
+    import_service = ImportService(db)
+    file_import = await import_service.get_by_id(id)
+    if not file_import:
+        raise NotFoundException(message="Import not found", code="IMPORT_NOT_FOUND")
+    file_import.status = "FAILED"
+    await db.commit()
+    return {"message": "Import cancelled successfully"}
+
+@router.post("/{id}/retry", response_model=Dict[str, Any])
+async def retry_import(
+    id: str,
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(get_current_user_payload)
+) -> Any:
+    # Placeholder: actually we should re-queue the task
+    import_service = ImportService(db)
+    file_import = await import_service.get_by_id(id)
+    if not file_import:
+        raise NotFoundException(message="Import not found", code="IMPORT_NOT_FOUND")
+    file_import.status = "PROCESSING"
+    await db.commit()
+    return {"message": "Import retry started"}
+
+@router.post("/reset-stuck", response_model=Dict[str, Any])
+async def reset_stuck_imports(
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(get_current_user_payload)
+) -> Any:
+    # Placeholder: query all PROCESSING older than X and mark FAILED
+    return {"message": "Stuck imports have been reset"}

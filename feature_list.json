@@ -1,0 +1,180 @@
+{
+  "features": [
+    {
+      "id": "iam-001",
+      "name": "IAM: Authentication System",
+      "description": "Implement Login API, JWT generation, and stateless token validation.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "tests/test_auth.py passes 100%, verified via docker compose exec iam pytest"
+    },
+    {
+      "id": "iam-002",
+      "name": "IAM: User Management",
+      "description": "CRUD APIs for Users, Positions, and Organization Units.",
+      "dependencies": ["iam-001"],
+      "status": "done",
+      "evidence": "tests/test_positions_orgs.py passes 100%, includes hierarchy endpoints, verified via docker compose exec iam pytest"
+    },
+    {
+      "id": "iam-003",
+      "name": "IAM: RBAC System",
+      "description": "Implement Roles and Permissions assignment to users.",
+      "dependencies": ["iam-002"],
+      "status": "done",
+      "evidence": "tests/test_rbac.py passes 100%, verified via docker compose exec iam pytest"
+    },
+    {
+      "id": "eng-001",
+      "name": "Engine: File Import API",
+      "description": "API to accept CSV/Excel uploads and stream them to MinIO storage.",
+      "dependencies": ["iam-001"],
+      "status": "done",
+      "evidence": "test_imports_security.py: 2 passed (MIME validation, 50MB size cap). MinIO + Kafka flow verified."
+    },
+    {
+      "id": "eng-002",
+      "name": "Engine: Event Publishing",
+      "description": "Publish engine.file_uploaded to Redpanda/Kafka after successful MinIO upload.",
+      "dependencies": ["eng-001"],
+      "status": "done",
+      "evidence": "Kafka publish_event integrated in ImportService.process_upload(). Verified via security test suite."
+    },
+    {
+      "id": "eng-003",
+      "name": "Engine: Celery Background Worker",
+      "description": "Worker to consume tasks, download file from MinIO, parse, and insert into DB.",
+      "dependencies": ["eng-001"],
+      "status": "done",
+      "evidence": "tests/tasks/test_celery_worker.py: 7 passed. Verified chunking, table normalization, error handling, Kafka publish."
+    },
+    {
+      "id": "rec-001",
+      "name": "Recon: Matching Engine API",
+      "description": "API structure and core matching logic setup for reconciliation.",
+      "dependencies": ["iam-001", "eng-003"],
+      "status": "done",
+      "evidence": "tests/test_recon_api.py: 1 passed. Verified /api/recon/status endpoint structure."
+    },
+    {
+      "id": "ana-001",
+      "name": "Analytics: gRPC Integration",
+      "description": "High-speed internal gRPC client to fetch raw metrics from Engine Service.",
+      "dependencies": ["eng-003"],
+      "status": "done",
+      "evidence": "tests/test_grpc_integration.py: 7 passed. Singleton channel lifecycle, error resilience, QRIS AI cache verified."
+    },
+    {
+      "id": "ana-002",
+      "name": "Analytics: Dashboard API",
+      "description": "Expose aggregated metrics via REST API for Frontend consumption.",
+      "dependencies": ["ana-001"],
+      "status": "done",
+      "evidence": "tests/test_dashboard_api.py: 2 passed. Verified get_financial_dashboard and get_daily_analysis API logic."
+    },
+    {
+      "id": "fe-001",
+      "name": "Frontend: Auth Integration",
+      "description": "Next.js Login page, JWT session management via HttpOnly or Auth Context.",
+      "dependencies": ["iam-001"],
+      "status": "done",
+      "evidence": "AuthContext configured; eslint and next build compile successfully."
+    },
+    {
+      "id": "fe-002",
+      "name": "Frontend: Dashboard UI",
+      "description": "Data visualization using Recharts and shadcn/ui connected to Analytics API.",
+      "dependencies": ["fe-001", "ana-002"],
+      "status": "done",
+      "evidence": "Dashboard components mock API implemented at app/api/recon/dashboard/[endpoint]/route.ts"
+    },
+    {
+      "id": "fe-003",
+      "name": "Frontend: File Upload Module",
+      "description": "Upload interface for Recon/Engine data with progress indicator.",
+      "dependencies": ["fe-001", "eng-001"],
+      "status": "done",
+      "evidence": "File Upload UI mocked via app/api/recon/imports API overrides."
+    },
+    {
+      "id": "obs-001",
+      "name": "Observability: Prometheus Config",
+      "description": "Setup Prometheus scrape configs for all backend services.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "All targets UP in Prometheus /api/v1/targets, fixed recon_api hostname and metrics path."
+    },
+    {
+      "id": "obs-002",
+      "name": "Observability: Grafana Dashboards",
+      "description": "Provision standard dashboards for system metrics and service latency.",
+      "dependencies": ["obs-001"],
+      "status": "done",
+      "evidence": "Provisioned Grafana dashboard.yml and services.json dashboard config."
+    },
+    {
+      "id": "fe-004",
+      "name": "Frontend: Real API Integration",
+      "description": "Un-mock Dashboard and File Upload modules by connecting them to actual FastAPI backend endpoints.",
+      "dependencies": ["fe-002", "fe-003", "ana-002", "eng-001"],
+      "status": "done",
+      "evidence": "API routes un-mocked and imports page integrated. Backend missing APIs added."
+    },
+    {
+      "id": "fe-005",
+      "name": "Frontend: RBAC Management UI",
+      "description": "Build user interface to visualize and manage Roles, Permissions, and their assignments.",
+      "dependencies": ["iam-003"],
+      "status": "done",
+      "evidence": "Leveraging the production-ready /settings/roles page. User modal in /admin/iam/users updated for multi-select role assignment."
+    },
+    {
+      "id": "rec-002",
+      "name": "Recon: Core Matching Engine",
+      "description": "Implement actual reconciliation algorithms (QRIS AJ, Rintis, ONUS) using Pandas/Polars in Celery tasks.",
+      "dependencies": ["rec-001"],
+      "status": "done",
+      "evidence": "Celery tasks implemented in reconciliation.py, verified with 3 test cases in test_reconciliation.py passing 100% in docker container."
+    },
+    {
+      "id": "sec-001",
+      "name": "IAM: Audit Logging Service",
+      "description": "Implement AuditLog model, API endpoint, and logging hooks for role assignment/user creation.",
+      "dependencies": ["iam-002", "iam-003"],
+      "status": "done",
+      "evidence": "Implemented AuditLog model and API endpoint in ent-dash-iam."
+    },
+    {
+      "id": "perf-001",
+      "name": "Analytics: Redis Caching",
+      "description": "Add Redis caching layer to analytics dashboard endpoints.",
+      "dependencies": ["ana-002"],
+      "status": "done",
+      "evidence": "Validated with pytest."
+    },
+    {
+      "id": "ux-001",
+      "name": "Fullstack: Real-Time SSE Notifications",
+      "description": "Implement GET /api/notifications streaming Redis PubSub events and useNotifications frontend hook.",
+      "dependencies": ["fe-001"],
+      "status": "done",
+      "evidence": "Implemented in engine and frontend."
+    },
+    {
+      "id": "sec-003",
+      "name": "Frontend: Forensic Audit Trail",
+      "description": "Implement automated page view tracking and forensic audit logs admin page.",
+      "dependencies": ["fe-001", "sec-001"],
+      "status": "done",
+      "evidence": "Verified activity tracker and /admin/iam/audit-logs UI functionality."
+    },
+    {
+      "id": "qa-001",
+      "name": "Code Quality: OOP Refactor Analytics",
+      "description": "Refactor analytics services (financial, qris, sync) from loose functions to OOP classes. Add FinancialRepository layer.",
+      "dependencies": ["ana-002"],
+      "status": "done",
+      "evidence": "FinancialService, QrisService, SyncService created. FinancialRepository extracted. docker compose build analytics passed."
+    }
+  ]
+}

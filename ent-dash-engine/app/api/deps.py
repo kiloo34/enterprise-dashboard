@@ -19,3 +19,17 @@ async def get_current_user_payload(token: str = Depends(oauth2_scheme)) -> dict:
         return payload
     except JWTError:
         raise UnauthorizedException(message="Could not validate credentials", code="INVALID_TOKEN")
+
+from fastapi import Query
+
+async def get_current_user_from_query(token: str = Query(..., description="JWT access token")) -> dict:
+    """
+    Stateless JWT validation for Server-Sent Events (SSE) which cannot send headers.
+    """
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("sub") is None:
+            raise UnauthorizedException(message="Invalid token payload", code="INVALID_TOKEN")
+        return payload
+    except JWTError:
+        raise UnauthorizedException(message="Could not validate credentials", code="INVALID_TOKEN")

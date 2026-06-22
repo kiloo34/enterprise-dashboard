@@ -16,6 +16,19 @@ class Settings(BaseSettings):
     def sqlalchemy_database_uri(self) -> str:
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
+    # Secondary connection for Engine Service database (raw transactions)
+    # Celery will replace driver to psycopg2 to perform synchronous matching
+    ENGINE_DATABASE_URI: str = ""
+
+    @property
+    def sync_database_uri(self) -> str:
+        return self.sqlalchemy_database_uri.replace("postgresql+asyncpg", "postgresql+psycopg2")
+
+    @property
+    def engine_sync_database_uri(self) -> str:
+        uri = self.ENGINE_DATABASE_URI or self.sqlalchemy_database_uri
+        return uri.replace("postgresql+asyncpg", "postgresql+psycopg2")
+
     # JWT
     # No default — service will fail to start if SECRET_KEY is not set in environment.
     SECRET_KEY: str
@@ -24,6 +37,11 @@ class Settings(BaseSettings):
     # API Keys
     GEMINI_API_KEY: str = ""
     CELERY_BROKER_URL: str = "redis://redis:6379/0"
+
+    # Kafka Config
+    KAFKA_BOOTSTRAP_SERVERS: str = "redpanda:9092"
+    KAFKA_TOPIC_DATA_PROCESSED: str = "engine.data_processed"
+    KAFKA_CONSUMER_GROUP: str = "recon-group"
     
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 

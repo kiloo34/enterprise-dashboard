@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional, Union
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.base import CRUDBase
@@ -9,6 +9,14 @@ from app.core.security import get_password_hash, verify_password
 
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
+    async def assign_roles(self, db: AsyncSession, *, user_id: int, role_ids: List[int]) -> User:
+        from app.models.role_permission import ModelHasRole
+        await db.execute(delete(ModelHasRole).where(ModelHasRole.model_id == user_id))
+        for r_id in role_ids:
+            mapping = ModelHasRole(model_id=user_id, role_id=r_id, model_type="User")
+            db.add(mapping)
+        await db.commit()
+        return await self.get_with_relations(db, user_id=user_id)
     async def get_by_email(self, db: AsyncSession, *, email: str) -> Optional[User]:
         query = select(User).filter(User.email == email)
         result = await db.execute(query)
@@ -55,6 +63,20 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         )
         result = await db.execute(query)
         return result.unique().scalars().all()
+
+    async def get_with_relations(self, db: AsyncSession, *, user_id: int) -> Optional[User]:
+        from app.models.role_permission import Role
+        query = (
+            select(User)
+            .options(
+                selectinload(User.position),
+                selectinload(User.organization_unit),
+                selectinload(User.roles).selectinload(Role.permissions),
+            )
+            .filter(User.id == user_id)
+        )
+        result = await db.execute(query)
+        return result.unique().scalar_one_or_none()
 
     async def get_full_profile(self, db: AsyncSession, *, user_id: int) -> Dict[str, Any]:
         from app.models.role_permission import Role, Permission, ModelHasRole, RoleHasPermission

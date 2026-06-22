@@ -1,48 +1,96 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas.qris import DailyAnalysisResponseDto
-import httpx
+"""
+QRIS Service — Business Logic Layer for AI-powered daily analysis.
+
+Implements OOP pattern: QrisService encapsulates all AI analysis
+logic including caching and Gemini API integration.
+"""
 import os
+import httpx
 from cachetools import TTLCache
+from sqlalchemy.ext.asyncio import AsyncSession
 
-# Simple in-memory per-process cache for AI analysis — 24 hours TTL
-analysis_cache = TTLCache(maxsize=100, ttl=86400)
+from app.schemas.qris import DailyAnalysisResponseDto
 
 
-async def get_daily_analysis(db: AsyncSession, date: str, network: str) -> DailyAnalysisResponseDto:
+# Module-level cache: shared across all QrisService instances (per-process)
+_analysis_cache: TTLCache = TTLCache(maxsize=100, ttl=86400)
+
+
+class QrisService:
     """
-    AI-powered daily analysis via Gemini.
-    Note: QRIS stats query is delegated — analytics uses its own aggregated data in future.
-    For now returns a placeholder since QRIS rekon models live in the Recon service.
+    Provides AI-powered QRIS daily analysis via the Gemini API.
+    Uses an in-memory TTL cache to avoid redundant API calls.
     """
-    cache_key = f"qris_ai_analysis_{network}_{date}"
-    if cache_key in analysis_cache:
-        return DailyAnalysisResponseDto(status="success", data={"date": date, "analysis": analysis_cache[cache_key]})
 
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
+    def __init__(self, db: AsyncSession):
+        # db kept for future direct QRIS metric queries
+        self._db = db
+        self._cache = _analysis_cache
+
+    async def get_daily_analysis(self, date: str, network: str) -> DailyAnalysisResponseDto:
+        """
+        Returns AI analysis for a given QRIS network and date.
+        Hits cache first; falls back to Gemini API; degrades gracefully
+        when no API key is configured (simulation mode).
+        """
+        cache_key = f"qris_ai_analysis_{network}_{date}"
+        if cache_key in self._cache:
+            return DailyAnalysisResponseDto(
+                status="success",
+                data={"date": date, "analysis": self._cache[cache_key]}
+            )
+
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            return DailyAnalysisResponseDto(
+                status="success",
+                data={
+                    "date": date,
+                    "analysis": (
+                        f"[Simulation Mode]: No GEMINI_API_KEY set. "
+                        f"Analytics service ready for {network} on {date}."
+                    ),
+                }
+            )
+
+        analysis = await self._call_gemini(date, network, api_key)
+        self._cache[cache_key] = analysis
+
         return DailyAnalysisResponseDto(
             status="success",
-            data={"date": date, "analysis": f"[Simulation Mode]: No GEMINI_API_KEY set. Analytics service ready for {network} on {date}."}
+            data={"date": date, "analysis": analysis}
         )
 
-    prompt = (
-        f"Anda adalah Analis Keuangan Profesional tingkat direksi. "
-        f"Berikan analisis singkat performa jaringan {network} pada tanggal {date}."
-    )
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        try:
-            response = await client.post(
-                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}",
-                json={"contents": [{"parts": [{"text": prompt}]}]}
-            )
-            if response.status_code == 200:
-                analysis = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Analisis gagal.")
-                analysis_cache[cache_key] = analysis
-            else:
+    async def _call_gemini(self, date: str, network: str, api_key: str) -> str:
+        """Calls the Gemini API and returns the analysis text."""
+        prompt = (
+            f"Anda adalah Analis Keuangan Profesional tingkat direksi. "
+            f"Berikan analisis singkat performa jaringan {network} pada tanggal {date}."
+        )
+        url = (
+            f"https://generativelanguage.googleapis.com/v1beta/"
+            f"models/gemini-2.5-flash:generateContent?key={api_key}"
+        )
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            try:
+                response = await client.post(
+                    url,
+                    json={"contents": [{"parts": [{"text": prompt}]}]}
+                )
+                if response.status_code == 200:
+                    return (
+                        response.json()
+                        .get("candidates", [{}])[0]
+                        .get("content", {})
+                        .get("parts", [{}])[0]
+                        .get("text", "Analisis gagal.")
+                        .strip()
+                    )
                 err = response.json().get("error", {})
-                analysis = f"Error {err.get('code', response.status_code)}: {err.get('message', 'Unknown error')}"
-        except Exception as e:
-            analysis = f"Gagal memanggil AI: {str(e)}"
-
-    return DailyAnalysisResponseDto(status="success", data={"date": date, "analysis": analysis.strip()})
+                return f"Error {err.get('code', response.status_code)}: {err.get('message', 'Unknown error')}"
+            except Exception as e:
+                return f"Gagal memanggil AI: {str(e)}"

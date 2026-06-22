@@ -12,6 +12,7 @@ from app.db.base import Base
 # Import all models here so Alembic can see them
 from app.models.user import User, Position, OrganizationUnit
 from app.models.role_permission import Role, Permission
+from app.models.audit_log import AuditLog
 
 config = context.config
 

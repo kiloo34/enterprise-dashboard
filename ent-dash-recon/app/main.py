@@ -1,11 +1,33 @@
+import asyncio
+import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.main import api_router
+from app.core.events import start_kafka_consumer, stop_kafka_consumer
 
 from prometheus_fastapi_instrumentator import Instrumentator
+
+logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start Kafka Consumer in the background
+    logger.info("[Recon] Starting background Kafka consumer...")
+    consumer_task = asyncio.create_task(start_kafka_consumer())
+    
+    yield
+    
+    # Shutdown Kafka Consumer
+    logger.info("[Recon] Stopping background Kafka consumer...")
+    await stop_kafka_consumer()
+    try:
+        await asyncio.wait_for(consumer_task, timeout=5.0)
+    except asyncio.TimeoutError:
+        logger.warning("[Recon] Kafka consumer did not stop in time, cancelled.")
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -14,6 +36,7 @@ def create_app() -> FastAPI:
         openapi_url=f"{settings.API_V1_STR}/openapi.json",
         docs_url=f"{settings.API_V1_STR}/docs",
         redoc_url=f"{settings.API_V1_STR}/redoc",
+        lifespan=lifespan,
     )
 
     # Set all CORS enabled origins
