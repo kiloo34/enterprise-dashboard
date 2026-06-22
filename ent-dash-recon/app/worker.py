@@ -1,10 +1,13 @@
 from celery import Celery
+from app.core.config import settings
 
 celery_app = Celery(
-    "ent_dash_worker",
-    broker="redis://redis:6379/0",
-    backend="redis://redis:6379/0",
-    include=["app.tasks.imports"],
+    "ent_dash_recon_worker",
+    # Menggunakan settings agar bisa dikonfigurasi via env var CELERY_BROKER_URL
+    # (sebelumnya hardcoded "redis://redis:6379/0" di sini)
+    broker=settings.CELERY_BROKER_URL,
+    backend=settings.CELERY_BROKER_URL,
+    include=[],  # Aktifkan saat task pertama Recon sudah dibuat di app/tasks/
 )
 
 celery_app.conf.update(
