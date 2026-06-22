@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package engine;
+
+// Represents the request to fetch aggregate Data
+message FactKinerjaRequest {
+  string token = 1; // Optional, simple auth validation if we don't pass via metadata headers
+}
+
+// Represents a single aggregated row of FactKinerja
+message FactKinerjaRow {
+  string keterangan = 1;
+  string periode_data = 2; // ISO String (YYYY-MM-DD)
+  string kelompok = 3;
+  string jenis = 4;
+  string urut = 5;
+  string wil = 6;
+  string nama_wil = 7;
+  string cab = 8;
+  string nama_cab = 9;
+  bool is_ajp = 10;
+  double total_nominal = 11;
+  double avg_rasio = 12;
+}
+
+// Represents the response containing the payload
+message FactKinerjaResponse {
+  repeated FactKinerjaRow data = 1;
+  string status = 2;
+  string message = 3;
+}
+
+// The service definition
+service EngineService {
+  rpc GetFactKinerjaAggregate(FactKinerjaRequest) returns (FactKinerjaResponse);
+}
