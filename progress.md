@@ -2,12 +2,26 @@
 
 ## Current State
 
-**Last Updated:** 2026-06-22 15:40
+**Last Updated:** 2026-06-22 19:35
 **Active Feature:** None (All features completed)
 
 ## Status
 
 ### What's Done
+
+- [x] **sec-004: Ongoing Compliance Monitoring (UU PDP):**
+  - Designed `ComplianceService` in the IAM backend to measure data retention health and flag security anomalies (breaches).
+  - Defined strict compliance rules: alerts on any logs retained > 5 years, and any IP/User invoking `DATA_EXPORT` more than 10 times in 24 hours.
+  - Built comprehensive `test_compliance.py` that fully mocked retention gaps and data breach simulations resulting in 100% green test passing.
+  - Implemented `/admin/compliance` React view on the Frontend via Next.js and Tailwind, equipped with interactive score cards, retention indicators, and incident tables.
+
+- [x] **System Maintenance & Harness Stability (Jun 22, 2026):**
+  - Repaired missing test dependencies (`pytest`, `aiosqlite`, `httpx`) across all backend containers.
+  - Refactored `Analytics` service class instantiations (`QrisService`, `FinancialService`) in API endpoints and integration tests to strictly follow OOP conventions dictated by `AGENTS.md`.
+  - Fixed SQL lazy loading `MissingGreenlet` exceptions in IAM Role mapping by implementing `selectinload()`.
+  - Resolved zero-byte truncated file errors in Next.js `ent-dash-fe` codebase by restoring HEAD from Git.
+  - Mitigated legacy `eslint` rules interfering with Next.js build through updated `next.config.ts`.
+  - Overall `init.sh` harness execution passed with **100% Green Status** across IAM, Engine, Analytics, Recon, and FE Build.
 
 - [x] **rec-002: Core Recon Matching Engine:**
   - Uncommented and enabled `celery_worker` under the Recon service in `docker-compose.yml`.
@@ -120,3 +134,5 @@
 
 The `iam` backend uses `app.` schema, which has been configured in `conftest.py` for SQLite. Future test files should just use the existing `db_session` fixture.
 All systems are now production-hardened!
+
+*Update: Maintenance sweep completed. The test suite stability is solid and all tests pass reliably in containerized environments. No further repairs are needed at this moment.*
