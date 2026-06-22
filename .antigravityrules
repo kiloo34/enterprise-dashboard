@@ -1,0 +1,177 @@
+# Antigravity Rules: Enterprise Dashboard
+
+## Project Context
+
+Enterprise Dashboard adalah sistem dashboard multi-layanan berbasis mikroservis yang digunakan untuk monitoring data keuangan dan operasi. Setiap agen AI yang bekerja di repositori ini HARUS mematuhi aturan-aturan berikut.
+
+---
+
+## 1. Arsitektur Sistem
+
+### Infrastructure
+- Seluruh service berjalan dalam **Docker Compose**.
+- **Traefik v3.0** adalah satu-satunya API Gateway dan Load Balancer.
+- Routing Traefik menggunakan `PathPrefix`. Jangan ubah routing yang sudah ada tanpa pertimbangan matang.
+- Port eksternal yang sudah terdefinisi: Traefik (80), DB (5434), Redis (6379), MinIO (9000/9001), Redpanda (19092).
+
+### Microservices
+| Service | Direktori | Database | Path Prefix |
+|---|---|---|---|
+| IAM | `ent-dash-iam` | `ent_dash_iam` | `/api/auth`, `/api/user`, `/api/admin`, `/api/roles`, `/api/permissions`, `/api/positions`, `/api/organization-units` |
+| Analytics | `ent-dash-analytics` | `ent_dash_analytics` | `/api/dashboard` |
+| Engine | `ent-dash-engine` | `ent_dash_engine` | `/api/imports`, `/api/engine` |
+| Recon | `ent-dash-recon` | `ent_dash_recon` | `/api/recon` |
+| Frontend | `ent-dash-fe` | - | `/` |
+
+---
+
+## 2. Backend Standards (Python FastAPI)
+
+### Arsitektur Direktori (setiap service)
+```
+app/
+├── api/
+│   ├── deps.py        # FastAPI dependencies (get_db, get_current_user)
+│   └── routes/        # Router handlers (thin layer, business logic di services/)
+├── core/
+│   ├── config.py      # Settings menggunakan pydantic-settings
+│   ├── security.py    # JWT, password hashing
+│   └── exceptions.py  # Custom exception classes + handlers
+├── db/
+│   ├── base_class.py  # SQLAlchemy Base
+│   ├── session.py     # engine, AsyncSessionLocal, get_db
+│   ├── init_db.py     # Schema creation + seeding on startup
+│   └── seed.py        # Data seeding logic
+├── models/            # SQLAlchemy ORM Models (OOP)
+├── schemas/           # Pydantic v2 request/response schemas
+└── services/          # Business logic layer (OOP Classes)
+```
+
+### Object-Oriented Programming (WAJIB)
+- **Models**: Setiap entitas database harus merupakan **Python Class** yang mewarisi `Base` (SQLAlchemy Declarative Base).
+  ```python
+  class User(Base):
+      __tablename__ = "users"
+      __table_args__ = {"schema": "app"}
+      # ...columns dan relationships
+  ```
+- **Services**: Logika bisnis yang kompleks HARUS dikemas dalam **Class**, bukan fungsi bebas.
+  ```python
+  class AuthService:
+      def __init__(self, db: AsyncSession):
+          self.db = db
+      
+      async def authenticate(self, email: str, password: str) -> User | None:
+          # ... logic
+  ```
+- **Repositories**: Untuk operasi DB yang berulang, buat Repository Class terpisah.
+- **Exceptions**: Gunakan hierarki exception class dari `app/core/exceptions.py` (`AppException`, `NotFoundException`, `UnauthorizedException`, dll.).
+- **Avoid Procedural**: Jangan buat fungsi standalone untuk logika bisnis. Kemas dalam class yang relevan.
+
+### Database
+- **ORM**: SQLAlchemy 2.0 dengan `async`/`await` (WAJIB). Dilarang menggunakan SQLAlchemy synchronous.
+- **Schema**: Semua tabel milik microservice menggunakan schema PostgreSQL `app` (`__table_args__ = {"schema": "app"}`).
+- **Migrations**: Alembic digunakan untuk schema migration. Jangan buat atau drop tabel manual.
+- **Init DB**: `init_db.py` dijalankan saat startup untuk memastikan schema dan tabel ada.
+
+### Dependency Injection
+- Selalu gunakan `Depends(get_db)` untuk database session.
+- Gunakan `Depends(get_current_user_payload)` dari IAM service untuk proteksi endpoint.
+- Hindari membuat global state atau mutable shared state.
+
+### Async Standards
+- SEMUA operasi I/O (database, HTTP, file) harus `async`.
+- Gunakan `asyncio` untuk concurrent operations.
+- Gunakan `httpx.AsyncClient` (BUKAN `requests`) untuk HTTP calls antar-service.
+
+---
+
+## 3. Inter-Service Communication
+
+### REST API (Utama)
+- Gunakan **`httpx.AsyncClient`** untuk semua HTTP calls antar-service.
+- Timeout WAJIB di-set (default: 5.0 detik) untuk mencegah cascading failure.
+- Gunakan URL internal Docker (bukan `localhost`). Contoh: `http://engine:8000/api/...`.
+- Tangani kegagalan dengan try/except dan berikan fallback value, jangan biarkan service lain crash.
+  ```python
+  async with httpx.AsyncClient(timeout=5.0) as client:
+      response = await client.get("http://engine:8000/api/imports/admin/summary")
+  ```
+
+### gRPC (Untuk Data Real-time & High-throughput)
+- Definisi `.proto` disimpan di `ent-dash-common/protos/`.
+- Gunakan paket `grpcio` dan `grpcio-tools`.
+- Setiap service yang mengekspos gRPC HARUS mendefinisikan servicenya di file `.proto`.
+- File `.proto` yang sudah ada: `engine.proto` (EngineService - GetFactKinerjaAggregate).
+- Gunakan gRPC untuk komunikasi yang membutuhkan streaming atau latency sangat rendah.
+
+### Event-Driven (Asinkron)
+- Gunakan **Redpanda (Kafka-compatible)** untuk event yang tidak butuh respons langsung.
+- Topic naming: `{service}.{event_name}` (contoh: `engine.file_uploaded`, `engine.data_processed`).
+- Gunakan **Celery + Redis** untuk background jobs yang berat (import file, rekonsiliasi).
+
+---
+
+## 4. Frontend Standards (Next.js)
+
+### Tech Stack
+- **Framework**: Next.js 16 dengan App Router.
+- **Language**: TypeScript (WAJIB). Hindari `any` type.
+- **Styling**: Tailwind CSS v4 dengan semantic design tokens.
+- **UI Primitives**: Radix UI. Periksa komponen yang sudah ada sebelum membuat baru.
+- **Icons**: Lucide React.
+- **Forms**: React Hook Form + Zod validation.
+- **Data Fetching**: SWR untuk GET, Axios untuk POST/PUT/DELETE.
+- **Charts**: Recharts.
+- **Notifications**: Sonner (toast).
+
+### Design Principles (WAJIB)
+- **Premium Aesthetics**: Setiap perubahan UI harus terlihat premium. Gunakan Glassmorphism, gradien halus, dan animasi mikro.
+- **Dark Mode First**: Desain utama adalah dark mode. Light mode harus tetap terbaca dan kontras.
+- **Responsive**: Mobile-first. Gunakan breakpoint Tailwind yang sudah ada.
+- **State Transitions**: Setiap perubahan state harus memiliki animasi/transisi yang halus.
+- **No Hardcoded Colors**: Selalu gunakan CSS token/variabel atau kelas Tailwind. Jangan hardcode `#hex` di komponen.
+
+### Struktur Komponen
+- Komponen yang digunakan lebih dari satu tempat HARUS dipindahkan ke `components/`.
+- Gunakan `"use client"` hanya bila diperlukan. Server Component adalah default.
+- API calls harus melalui layer abstraksi (service/client files), bukan langsung di komponen.
+
+---
+
+## 5. Shared Library (`ent-dash-common`)
+
+- Logic yang digunakan oleh **2 atau lebih service** HARUS dipindahkan ke `ent-dash-common`.
+- Semua file `.proto` untuk gRPC disimpan di `ent-dash-common/protos/`.
+- Paket ini di-mount menggunakan `additional_contexts` di Dockerfile, bukan dipublikasikan ke PyPI.
+
+---
+
+## 6. Security
+
+- **JWT**: Token diterbitkan oleh IAM service. Service lain memvalidasi token menggunakan shared `SECRET_KEY`.
+- **Password**: Selalu gunakan `bcrypt` (dari `passlib`) untuk hashing. Jangan simpan plaintext.
+- **Environment Variables**: Semua secrets (password, API key, secret key) HARUS disimpan di `.env` dan dibaca melalui Pydantic Settings. Jangan hardcode di source code.
+- **RBAC**: Semua endpoint yang butuh otorisasi HARUS menggunakan dependency `get_current_user_payload`.
+
+---
+
+## 7. Docker & DevOps
+
+- Setiap service memiliki `Dockerfile` sendiri.
+- Base image Python: `python:3.12-slim`.
+- Setelah perubahan kode Python, WAJIB rebuild: `docker-compose up -d --build <service>`.
+- Jangan gunakan `docker-compose restart` untuk perubahan kode (hanya reload konfigurasi).
+- Gunakan `docker-compose logs -f <service>` untuk debug.
+
+---
+
+## 8. Hal yang DILARANG
+
+- ❌ Menggunakan synchronous SQLAlchemy atau `requests` library.
+- ❌ Menyimpan secret/credentials di source code.
+- ❌ Membuat endpoint baru tanpa proteksi autentikasi (kecuali `/health-check` dan `/login`).
+- ❌ Menggunakan tipe `any` di TypeScript tanpa alasan yang jelas.
+- ❌ Mengubah routing Traefik tanpa mempertimbangkan dampak ke semua service.
+- ❌ Menghapus atau mengubah skema database secara manual (harus via Alembic).
+- ❌ Logic bisnis di dalam route handler secara langsung (harus di layer `services/`).

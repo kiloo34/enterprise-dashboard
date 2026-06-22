@@ -1,3 +1,0 @@
-periode_data,periode_laporan,is_ajp,kelompok,keterangan,urut,jenis,wil,nama_wil,cab,nama_cab,nominal,rasio
-2026-03-01,1,true,Test Kelompok,Test Keterangan,1,1,WIL,Wilayah Test,CAB,Cabang Test,1000000,0.5
-2026-03-01,1,false,Test Kelompok 2,Test Keterangan 2,2,2,WIL,Wilayah Test,CAB,Cabang Test,2000000,0.8

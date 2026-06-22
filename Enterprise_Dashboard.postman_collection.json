@@ -29,6 +29,35 @@
               "path": ["api", "auth", "login"]
             }
           }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/refresh",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "User Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/logout",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "logout"]
+            }
+          }
         }
       ]
     },
@@ -81,11 +110,139 @@
       ]
     },
     {
-      "name": "3. Engine & Data Import (Recon API)",
-      "description": "Endpoint Sistem Rekonsiliasi, Upload File Masif, dan Monitoring Celery Worker.",
+      "name": "3. User Management & RBAC",
       "item": [
         {
-          "name": "Upload CSV/TXT Data (Priority Support)",
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/user-management/users",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "user-management", "users"]
+            }
+          }
+        },
+        {
+          "name": "Get Positions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/user-management/positions",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "user-management", "positions"]
+            }
+          }
+        },
+        {
+          "name": "Get Organization Units",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/user-management/organization-units",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "user-management", "organization-units"]
+            }
+          }
+        },
+        {
+          "name": "Get Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/rbac/roles",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "rbac", "roles"]
+            }
+          }
+        },
+        {
+          "name": "Get Permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/rbac/permissions",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "rbac", "permissions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. System Config & Admin",
+      "item": [
+        {
+          "name": "Get System Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/admin/system-stats",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "admin", "system-stats"]
+            }
+          }
+        },
+        {
+          "name": "Get System Config",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/system-config",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "system-config"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Engine & Data Import",
+      "item": [
+        {
+          "name": "Upload CSV/TXT Data",
           "request": {
             "method": "POST",
             "header": [
@@ -110,8 +267,7 @@
                 {
                   "key": "priority",
                   "value": "5",
-                  "type": "text",
-                  "description": "0 = Normal, 5 = Tinggi, 9 = Mendesak (Akan melompati antrean Redis)"
+                  "type": "text"
                 }
               ]
             },
@@ -138,15 +294,31 @@
               "path": ["api", "recon", "imports"]
             }
           }
+        },
+        {
+          "name": "Get Engine Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/engine/monitor/stats",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "engine", "monitor", "stats"]
+            }
+          }
         }
       ]
     },
     {
-      "name": "4. Dashboard Data Analytics",
-      "description": "Endpoint Statistik Transaksi, Ratio Keuangan, dan Analisa Harian.",
+      "name": "6. Dashboard Data Analytics",
       "item": [
         {
-          "name": "Get Financial Metrics (Tingkat Direksi)",
+          "name": "Get Financial Metrics",
           "request": {
             "method": "GET",
             "header": [
@@ -162,8 +334,30 @@
               "query": [
                 {
                   "key": "category",
-                  "value": "KREDIT",
-                  "description": "Bisa DPK, KREDIT, RATIO, dll."
+                  "value": "KREDIT"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get QRIS Analysis (AI)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/dashboard/qris-analysis?date=2026-01-02",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "dashboard", "qris-analysis"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2026-01-02"
                 }
               ]
             }
