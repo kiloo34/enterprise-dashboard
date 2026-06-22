@@ -1,0 +1,24 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlalchemy==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+pydantic==2.10.4
+pydantic-settings==2.7.1
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.20
+python-dotenv==1.0.1
+pytz==2024.2
+greenlet==3.3.2
+aiofiles>=24.1.0
+# Celery for internal batch processing workers
+celery>=5.3.6
+redis>=5.2.0
+# Sync PostgreSQL driver — digunakan oleh Celery worker (menghindari asyncio.run anti-pattern)
+psycopg2-binary>=2.9.0
+# MinIO — S3-compatible object storage client
+minio>=7.2.0
+# Kafka producer — confluent-kafka for Redpanda compatibility
+confluent-kafka>=2.3.0
+prometheus-fastapi-instrumentator>=6.0.0
+

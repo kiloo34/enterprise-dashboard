@@ -1,0 +1,34 @@
+FROM python:3.13-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# librdkafka needed by confluent-kafka
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    gcc \
+    librdkafka-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install shared common library first (using Docker additional_contexts)
+COPY --from=common . /ent-dash-common/
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir /ent-dash-common
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# Create non-root user and switch to it
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser \
+    && chown -R appuser:appgroup /app
+USER appuser
+
+EXPOSE 8000
+EXPOSE 50051
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
