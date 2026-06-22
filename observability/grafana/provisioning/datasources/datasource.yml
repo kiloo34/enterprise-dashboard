@@ -8,3 +8,15 @@ datasources:
     url: http://prometheus:9090
     isDefault: true
     editable: true
+
+  - name: IAM_DB
+    type: postgres
+    access: proxy
+    url: db:5432
+    database: ent_dash_iam
+    user: postgres
+    secureJsonData:
+      password: "${POSTGRES_PASSWORD}"
+    jsonData:
+      sslmode: disable
+      postgresVersion: 17

@@ -1,0 +1,164 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "type": "stat",
+      "title": "Total Audit Events",
+      "datasource": {
+        "type": "postgres",
+        "uid": "IAM_DB"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT count(*) AS total_events FROM app.audit_logs WHERE created_at >= $__timeFrom()",
+          "datasource": {
+            "type": "postgres",
+            "uid": "IAM_DB"
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "type": "stat",
+      "title": "Failed Logins (Possible Brute Force)",
+      "datasource": {
+        "type": "postgres",
+        "uid": "IAM_DB"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM app.audit_logs WHERE action = 'LOGIN_FAILED' AND created_at >= $__timeFrom()",
+          "datasource": {
+            "type": "postgres",
+            "uid": "IAM_DB"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "type": "piechart",
+      "title": "Action Distribution",
+      "datasource": {
+        "type": "postgres",
+        "uid": "IAM_DB"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT action, count(*) FROM app.audit_logs WHERE created_at >= $__timeFrom() GROUP BY action ORDER BY count DESC",
+          "datasource": {
+            "type": "postgres",
+            "uid": "IAM_DB"
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "type": "timeseries",
+      "title": "Audit Event Volume (Timeline)",
+      "datasource": {
+        "type": "postgres",
+        "uid": "IAM_DB"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroupAlias(created_at, '1h'), count(id) AS \"events\" FROM app.audit_logs WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1",
+          "datasource": {
+            "type": "postgres",
+            "uid": "IAM_DB"
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "type": "table",
+      "title": "Recent Suspicious/Failed Operations",
+      "datasource": {
+        "type": "postgres",
+        "uid": "IAM_DB"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT created_at as \"Time\", action as \"Action\", ip_address as \"IP\", user_agent as \"User Agent\", endpoint as \"Endpoint\", status_code as \"Status\" FROM app.audit_logs WHERE (status_code >= 400 OR action = 'LOGIN_FAILED') ORDER BY created_at DESC LIMIT 100",
+          "datasource": {
+            "type": "postgres",
+            "uid": "IAM_DB"
+          }
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "tags": [
+    "IAM",
+    "Security",
+    "Audit"
+  ],
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "IAM Forensic Audit",
+  "uid": "iam_audit_dashboard_001",
+  "version": 1
+}

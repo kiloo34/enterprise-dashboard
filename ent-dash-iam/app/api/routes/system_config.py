@@ -5,7 +5,7 @@ All endpoints require authentication.
 Write endpoints (PUT, POST) are restricted to users with the 'super-admin' role.
 """
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
@@ -19,6 +19,7 @@ from app.schemas.system_config import (
 )
 from app.services.config_service import config_service
 from app.core.exceptions import NotFoundException, AppException
+from app.services.audit import AuditService
 
 router = APIRouter()
 
@@ -73,6 +74,7 @@ async def get_config(
 async def update_config(
     key: str,
     body: SystemConfigUpdate,
+    http_request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
@@ -92,12 +94,14 @@ async def update_config(
     updated = await crud.upsert(db, key=key, value=body.value, updated_by=current_user.email)
     # Immediately refresh in-memory cache for this key
     config_service.set(key, body.value)
+    await AuditService.log_action(db, current_user.id, "SYSTEM_CONFIG_UPDATED", "SystemConfig", key, {"new_value": "••••••••" if cfg.is_sensitive else body.value}, request=http_request)
     return _serialise(updated)
 
 
 @router.put("", response_model=List[SystemConfigResponse])
 async def bulk_update_configs(
     body: SystemConfigBulkUpdate,
+    http_request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
@@ -110,6 +114,8 @@ async def bulk_update_configs(
     # Refresh cache for each updated key
     for item in body.items:
         config_service.set(item.key, item.value)
+        
+    await AuditService.log_action(db, current_user.id, "SYSTEM_CONFIG_BULK_UPDATED", "SystemConfig", "BULK", {"keys": [i.key for i in body.items]}, request=http_request)
 
     return [_serialise(u) for u in updated]
 

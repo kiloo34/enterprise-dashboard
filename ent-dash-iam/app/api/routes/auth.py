@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Response, Request
 from app.core.exceptions import UnauthorizedException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any
@@ -11,6 +11,7 @@ from app.services.auth import AuthService
 from app.crud.crud_user import user as crud_user
 from app.api.deps import get_current_user_from_refresh_token
 from app.models.user import User
+from app.services.audit import AuditService
 
 
 router = APIRouter()
@@ -30,12 +31,14 @@ async def health_check(db: AsyncSession = Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 async def login(
     request: LoginRequest,
+    http_request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
     auth_service = AuthService(db)
     user_obj = await auth_service.authenticate(email=request.email, password=request.password)
     if not user_obj:
+        await AuditService.log_action(db, None, "LOGIN_FAILED", "Auth", request.email, request=http_request)
         raise UnauthorizedException(
             message="Incorrect email or password",
             code="INVALID_CREDENTIALS"
@@ -55,6 +58,8 @@ async def login(
         max_age=settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         path="/"
     )
+
+    await AuditService.log_action(db, user_obj.id, "LOGIN_SUCCESS", "Auth", request.email, request=http_request)
 
     return {
         "access_token": access_token,
@@ -95,7 +100,7 @@ async def refresh_token(
 
 
 @router.post("/logout")
-async def logout(response: Response) -> Any:
+async def logout(response: Response, http_request: Request, db: AsyncSession = Depends(get_db)) -> Any:
     """Clear refresh token cookie."""
     response.delete_cookie(
         key="refresh_token",
@@ -104,4 +109,5 @@ async def logout(response: Response) -> Any:
         httponly=True,
         samesite="lax"
     )
+    await AuditService.log_action(db, None, "LOGOUT", "Auth", "session_cleared", request=http_request)
     return {"message": "Successfully logged out"}

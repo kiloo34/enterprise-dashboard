@@ -1,0 +1,259 @@
+
+> ent-dash-fe@0.1.0 lint
+> eslint
+
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/__tests__/DataTable.test.tsx
+  4:10  warning  'PageError' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/__tests__/DeleteConfirmationModal.test.tsx
+  2:37  warning  'waitFor' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/__tests__/DireksiDashboard.test.tsx
+  35:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/__tests__/PageHeader.test.tsx
+  2:26  warning  'fireEvent' is defined but never used  @typescript-eslint/no-unused-vars
+  2:37  warning  'waitFor' is defined but never used    @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/app/(dashboard)/admin/iam/organization-units/page.tsx
+   9:10  warning  'FormInput' is defined but never used     @typescript-eslint/no-unused-vars
+  58:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  71:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/app/(dashboard)/admin/iam/positions/page.tsx
+  10:10  warning  'FormInput' is defined but never used     @typescript-eslint/no-unused-vars
+  60:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  73:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/app/(dashboard)/admin/iam/users/page.tsx
+   10:10  warning  'FormInput' is defined but never used     @typescript-eslint/no-unused-vars
+   74:28  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  103:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  116:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/app/(dashboard)/admin/monitoring/page.tsx
+  3:20  warning  'useRef' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/app/(dashboard)/rekon-engine/components/EngineHistoryTable.tsx
+   5:82  warning  'CheckCircle2' is defined but never used  @typescript-eslint/no-unused-vars
+  61:41  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/app/(dashboard)/rekon-engine/components/EngineLogDetailModal.tsx
+  4:30  warning  'AlertCircle' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/app/(dashboard)/rekon-engine/components/EngineLogFilters.tsx
+  27:7   warning  'MODULE_OPTIONS' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  58:5   warning  'module' is defined but never used                   @typescript-eslint/no-unused-vars
+  58:13  warning  'onModuleChange' is defined but never used           @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/app/(dashboard)/rekon-engine/import/page.tsx
+   14:11  warning  'DynamicEngineData' is defined but never used  @typescript-eslint/no-unused-vars
+   16:20  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  186:61  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/app/(dashboard)/rekon-engine/page.tsx
+  4:10  warning  'Database' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/app/(dashboard)/settings/system-config/page.tsx
+    4:31  warning  'Save' is defined but never used             @typescript-eslint/no-unused-vars
+  260:12  warning  'saving' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/app/(dashboard)/settings/users/hooks/useUserManagement.ts
+  52:16  warning  '_usersError' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/AuthContext.tsx
+  102:10  error  Error: This value cannot be modified
+
+Modifying a variable defined outside a component or hook is not allowed. Consider using an effect.
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/AuthContext.tsx:102:10
+  100 |     if (typeof window !== "undefined") {
+  101 |         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+> 102 |         (window as any).__getAuthToken = () => tokenRef.current;
+      |          ^^^^^^^^^^^^^ value cannot be modified
+  103 |         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  104 |         (window as any).__setAuthToken = (token: string) => {
+  105 |             tokenRef.current = token;  react-hooks/immutability
+  104:10  error  Error: This value cannot be modified
+
+Modifying a variable defined outside a component or hook is not allowed. Consider using an effect.
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/AuthContext.tsx:104:10
+  102 |         (window as any).__getAuthToken = () => tokenRef.current;
+  103 |         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+> 104 |         (window as any).__setAuthToken = (token: string) => {
+      |          ^^^^^^^^^^^^^ value cannot be modified
+  105 |             tokenRef.current = token;
+  106 |         };
+  107 |     }                                                                                                 react-hooks/immutability
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/SettingsContext.tsx
+  56:48  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/SettingsContext.tsx:56:48
+  54 |                 const user = JSON.parse(profileJson);
+  55 |                 if (user.uiSettings) {
+> 56 |                     if (user.uiSettings.theme) setThemeState(user.uiSettings.theme as Theme);
+     |                                                ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  57 |                     if (user.uiSettings.size) setSizeState(user.uiSettings.size as Size);
+  58 |                     if (user.uiSettings.language) setLanguageState(user.uiSettings.language as Language);
+  59 |                 }  react-hooks/set-state-in-effect
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/dashboard/DPKBreakdownCharts.tsx
+   26:11  warning  The 'chartDates' conditional could make the dependencies of useMemo Hook (at line 66) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'chartDates' in its own useMemo() Hook  react-hooks/exhaustive-deps
+   90:48  error    Unexpected any. Specify a different type                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  120:48  error    Unexpected any. Specify a different type                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  151:48  error    Unexpected any. Specify a different type                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/dashboard/DataTable/DataTable.tsx
+  37:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/dashboard/FilterBar.tsx
+  4:42  warning  'ChevronUp' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/dashboard/QrisDiscrepancyChart.tsx
+  26:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/dashboard/hooks/useQrisData.ts
+  53:11  warning  The 'tableData' logical expression could make the dependencies of useMemo Hook (at line 72) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'tableData' in its own useMemo() Hook                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-hooks/exhaustive-deps
+  81:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/dashboard/hooks/useQrisData.ts:81:9
+  79 |
+  80 |     useEffect(() => {
+> 81 |         setCurrentPage(1);
+     |         ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  82 |     }, [searchTerm, filterBankStatus, filterReconStatus, filterDate, rowsPerPage]);
+  83 |
+  84 |     useEffect(() => {  react-hooks/set-state-in-effect
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/layout/Header/Header.tsx
+  21:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/layout/Header/Header.tsx:21:9
+  19 |
+  20 |     useEffect(() => {
+> 21 |         setMounted(true);
+     |         ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  22 |     }, []);
+  23 |
+  24 |     const pageTitle = useMemo(() => {  react-hooks/set-state-in-effect
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/layout/Sidebar/Sidebar.tsx
+  15:5   warning  'PanelLeftClose' is defined but never used      @typescript-eslint/no-unused-vars
+  50:69  warning  'isEDMUnit' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/layout/Sidebar/hooks/useSidebarNavigation.ts
+  85:8  warning  React Hook useEffect has a missing dependency: 't.importData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/permissions/PermissionSearchBar.tsx
+  6:15  warning  'Permission' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/roles/RoleForm.tsx
+   50:33   warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/roles/RoleForm.tsx:50:33
+  48 |     const modalRef = useFocusTrap(isOpen, onClose);
+  49 |
+> 50 |     const selectedPermissions = watch("permissions") || [];
+     |                                 ^^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  51 |
+  52 |     useEffect(() => {
+  53 |         if (isOpen) {  react-hooks/incompatible-library
+  243:156  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react/no-unescaped-entities
+  243:175  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react/no-unescaped-entities
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/ui/DataTable.tsx
+  62:5  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps' or 'react-hooks/set-state-in-effect')
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/ui/SearchableSelect.tsx
+  77:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/ui/SearchableSelect.tsx:77:9
+  75 |     // Reset active index when search changes
+  76 |     useEffect(() => {
+> 77 |         setActiveIndex(-1);
+     |         ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  78 |     }, [searchQuery]);
+  79 |
+  80 |     // Cleanup on close  react-hooks/set-state-in-effect
+  83:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/ui/SearchableSelect.tsx:83:13
+  81 |     useEffect(() => {
+  82 |         if (!isOpen) {
+> 83 |             setSearchQuery('');
+     |             ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  84 |             setActiveIndex(-1);
+  85 |         }
+  86 |     }, [isOpen]);   react-hooks/set-state-in-effect
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/users/UserForm.tsx
+   35:18  warning  'permissionList' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  109:32  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/components/users/UserForm.tsx:109:32
+  107 |     }, [isOpen, user, reset]);
+  108 |
+> 109 |     const selectedPositionId = watch('position_id');
+      |                                ^^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  110 |     const selectedOrgUnitId = watch('organization_unit_id');
+  111 |     const [filteredSuperiors, setFilteredSuperiors] = React.useState<User[]>([]);
+  112 |  react-hooks/incompatible-library
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/features/reconciliation/components/ReconciliationTemplate.tsx
+  6:10  warning  'QrisDiscrepancyChart' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/hooks/useNotifications.ts
+  50:6  warning  React Hook useEffect has a missing dependency: 'user.accessToken'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/services/AuditService.ts
+  14:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  15:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/services/IAMService.ts
+  45:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  86:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  87:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/robileksono/Sites/Enterprise-Dashboard/ent-dash-fe/utils/api/dashboardApi.ts
+  7:10  warning  'api' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 62 problems (30 errors, 32 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

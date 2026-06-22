@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any, List
 
@@ -28,11 +28,12 @@ async def list_users(
 @router.post("/users", response_model=UserResponse)
 async def create_new_user(
     request: UserCreate,
+    http_request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
     new_user = await crud_user.create(db, obj_in=request)
-    await AuditService.log_action(db, current_user.id, "USER_CREATED", "User", str(new_user.id), request.model_dump(exclude={"password"}))
+    await AuditService.log_action(db, current_user.id, "USER_CREATED", "User", str(new_user.id), request.model_dump(exclude={"password"}), request=http_request)
     return await crud_user.get_with_relations(db, user_id=new_user.id)
 
 
@@ -53,6 +54,7 @@ async def get_user(
 async def update_user(
     user_id: int,
     request: UserUpdate,
+    http_request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
@@ -60,13 +62,14 @@ async def update_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     await crud_user.update(db, db_obj=user, obj_in=request)
-    await AuditService.log_action(db, current_user.id, "USER_UPDATED", "User", str(user_id), request.model_dump(exclude={"password"}, exclude_unset=True))
+    await AuditService.log_action(db, current_user.id, "USER_UPDATED", "User", str(user_id), request.model_dump(exclude={"password"}, exclude_unset=True), request=http_request)
     return await crud_user.get_with_relations(db, user_id=user_id)
 
 @router.put("/users/{user_id}/roles", response_model=UserResponse)
 async def assign_user_roles(
     user_id: int,
     request: UserRoleAssign,
+    http_request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
@@ -74,12 +77,13 @@ async def assign_user_roles(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     result = await crud_user.assign_roles(db, user_id=user_id, role_ids=request.role_ids)
-    await AuditService.log_action(db, current_user.id, "USER_ROLES_ASSIGNED", "User", str(user_id), {"role_ids": request.role_ids})
+    await AuditService.log_action(db, current_user.id, "USER_ROLES_ASSIGNED", "User", str(user_id), {"role_ids": request.role_ids}, request=http_request)
     return result
 
 @router.delete("/users/{user_id}")
 async def delete_user(
     user_id: int,
+    http_request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
@@ -87,7 +91,7 @@ async def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     await crud_user.remove(db, id=user_id)
-    await AuditService.log_action(db, current_user.id, "USER_DELETED", "User", str(user_id))
+    await AuditService.log_action(db, current_user.id, "USER_DELETED", "User", str(user_id), request=http_request)
     return {"message": "User deleted"}
 
 

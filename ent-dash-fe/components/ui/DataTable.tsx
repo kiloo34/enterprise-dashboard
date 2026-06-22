@@ -59,6 +59,7 @@ export function DataTable<T>({
     const [pageSize, setPageSize] = useState(defaultPageSize);
 
     // Reset to page 1 when data or pageSize changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
     useEffect(() => {
         setCurrentPage(1);
     }, [data.length, pageSize]);
