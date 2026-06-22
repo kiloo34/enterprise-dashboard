@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'ent_dash_iam'
+    static_configs:
+      - targets: ['iam:8000']
+
+  - job_name: 'ent_dash_analytics'
+    static_configs:
+      - targets: ['analytics:8000']
+
+  - job_name: 'ent_dash_engine'
+    static_configs:
+      - targets: ['engine:8000']
+
+  - job_name: 'ent_dash_recon'
+    static_configs:
+      - targets: ['recon:8000']
