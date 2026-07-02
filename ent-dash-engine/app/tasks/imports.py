@@ -23,8 +23,9 @@ import io
 import logging
 import traceback
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, table, column
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import insert
 
 from app.worker import celery_app
 from app.core.config import settings
@@ -214,17 +215,26 @@ def _process_csv_sync(import_id: str, object_name: str, target_table: str):
 
 
 def _bulk_insert(db, target_table: str, rows: list) -> tuple[int, int]:
-    """Insert a chunk of rows — idempotent via ON CONFLICT DO NOTHING."""
+    """Insert a chunk of rows — idempotent via ON CONFLICT DO NOTHING. Safe against SQLi."""
     if not rows:
         return 0, 0
     cols = list(rows[0].keys())
-    col_names = ", ".join(f'"{c}"' for c in cols)
-    placeholders = ", ".join(f":{c}" for c in cols)
+    
+    # Safely parse schema and table_name
+    schema = None
+    if "." in target_table:
+        parts = target_table.split(".", 1)
+        schema = parts[0].strip('"')
+        table_name = parts[1].strip('"')
+    else:
+        table_name = target_table.strip('"')
+        
+    # Construct dynamic SQLAlchemy table structure
+    t = table(table_name, *(column(c) for c in cols), schema=schema)
+    
     try:
-        db.execute(
-            text(f"INSERT INTO {target_table} ({col_names}) VALUES ({placeholders}) ON CONFLICT DO NOTHING"),
-            rows
-        )
+        stmt = insert(t).on_conflict_do_nothing()
+        db.execute(stmt, rows)
         db.commit()
         return len(rows), 0
     except Exception as e:

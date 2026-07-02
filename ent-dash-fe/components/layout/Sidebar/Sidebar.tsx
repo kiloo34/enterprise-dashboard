@@ -57,6 +57,7 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
         canViewDashboardOperasi && { href: "/divisi-operasi/summary", icon: Briefcase, label: t.divisiOperasi, active: isOperasiActive },
         canViewEngineMonitoring && { href: "/rekon-engine/import", icon: UploadCloud, label: t.importData, active: isImportActive },
         canViewEngineMonitoring && { href: "/rekon-engine", icon: Database, label: t.monitoring, active: isEngineActive },
+        canViewEngineMonitoring && { href: "/engine/data-explorer", icon: Database, label: "Data Explorer", active: pathname === "/engine/data-explorer" },
         canManageAccess && { href: "/settings/users", icon: Shield, label: t.manageAccess, active: isAccessActive },
         { href: "/settings", icon: Settings, label: t.settings, active: pathname === "/settings" },
         { href: "#", icon: HelpCircle, label: t.support, active: false },
@@ -233,6 +234,13 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
                                     icon={BarChart2}
                                     label={t.monitoring}
                                     active={pathname === "/rekon-engine"}
+                                    isSubItem
+                                />
+                                <SidebarNavItem
+                                    href="/engine/data-explorer"
+                                    icon={Database}
+                                    label="Data Explorer"
+                                    active={pathname === "/engine/data-explorer"}
                                     isSubItem
                                 />
                             </SidebarMenuDropdown>

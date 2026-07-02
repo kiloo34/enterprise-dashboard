@@ -234,6 +234,28 @@
       ],
       "status": "done",
       "evidence": "ComplianceService and UI built. Passed 3 unit tests in IAM. Frontend /admin/compliance builds successfully."
+    },
+    {
+      "id": "sec-005",
+      "name": "Backend: SQL Injection Remediation",
+      "description": "Fix SQL injection vulnerability in Engine CSV importer using psycopg2.sql identifier quoting.",
+      "dependencies": [
+        "eng-003"
+      ],
+      "status": "done",
+      "evidence": "Refactored imports.py with SQLAlchemy AST (table, column, insert). Verified with test_celery_worker.py (7 passed)."
+    },
+    {
+      "id": "de-001",
+      "name": "Dynamic Data Explorer with CRUD",
+      "description": "Generic interactive data browser with Create/Update/Delete on whitelisted engine/rekon tables. Permission-gated with audit trail.",
+      "dependencies": [
+        "eng-003",
+        "sec-005",
+        "sec-001"
+      ],
+      "status": "done",
+      "evidence": "Built DataExplorerService for generic CRUD. Added /engine/data-explorer UI with DynamicFormDialog. Verified via 100% backend tests and successful frontend build."
     }
   ]
 }

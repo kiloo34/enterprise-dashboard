@@ -9,6 +9,20 @@
 
 ### What's Done
 
+- [x] **2026-06-23: Phase 1 Data Explorer CRUD Implementation (de-001):**
+  - Built backend `DataExplorerService` using OOP for generic CRUD on 9 whitelisted engine/rekon tables.
+  - Implemented schema introspection to return column metadata to the frontend.
+  - Secured the API endpoints (`/api/engine/explorer/*`) using a custom `require_engine_permission` dependency.
+  - Created a robust frontend UI in `/engine/data-explorer` featuring a table selector, search bar, and dynamic `DataTable`.
+  - Built `DynamicFormDialog` which dynamically renders form inputs (with React Hook Form validation) based on the backend schema.
+  - Added "Data Explorer" to the sidebar navigation.
+  - Verified system via `init.sh` and `npm run build` with 100% success.
+
+- [x] **sec-005: Backend SQL Injection Remediation:**
+  - Audited `ent-dash-engine/app/tasks/imports.py` and identified a raw `f-string` SQL injection vector in the dynamic `INSERT` command.
+  - Refactored `_bulk_insert` to use SQLAlchemy AST constructs (`table`, `column`, `insert().on_conflict_do_nothing()`), eliminating string-based vulnerability.
+  - Verified stability using `test_celery_worker.py` inside the container resulting in 7/7 tests passed.
+
 - [x] **sec-004: Ongoing Compliance Monitoring (UU PDP):**
   - Designed `ComplianceService` in the IAM backend to measure data retention health and flag security anomalies (breaches).
   - Defined strict compliance rules: alerts on any logs retained > 5 years, and any IP/User invoking `DATA_EXPORT` more than 10 times in 24 hours.
