@@ -4,7 +4,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "IAM Service"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # Internal service URLs — configurable via env var for multi-env deploys
     ENGINE_INTERNAL_URL: str = "http://engine:8000"
@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     # Database — IAM uses its own isolated DB
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "password"
+    POSTGRES_PASSWORD: str  # No default — service fails to start if not set
     POSTGRES_DB: str = "ent_dash_iam"
     POSTGRES_PORT: str = "5432"
 
@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # K2 fix: Access token 15 menit
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # K2 fix: Refresh token 7 hari
+
+    # Cookie security — terpisah dari DEBUG agar HTTPS selalu dienforce di production.
+    # Set COOKIE_SECURE=false hanya di local dev tanpa HTTPS.
+    COOKIE_SECURE: bool = True
 
     # CORS — eksplisit via env var, tidak bergantung flag DEBUG
     # Set ALLOWED_ORIGINS="http://yourdomain.com,http://app.internal" di production

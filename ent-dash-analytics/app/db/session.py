@@ -1,20 +1,11 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from ent_dash_common.db import make_session_factory, make_get_db
 from app.core.config import settings
 
-engine = create_async_engine(
+AsyncSessionLocal = make_session_factory(
     settings.sqlalchemy_database_uri,
-    echo=False,
-    future=True,
     pool_size=10,
     max_overflow=20,
 )
 
-AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, autocommit=False, autoflush=False)
-
-
-async def get_db():
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+get_db = make_get_db(AsyncSessionLocal)
+engine = AsyncSessionLocal.kw['bind']

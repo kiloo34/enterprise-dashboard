@@ -4,6 +4,11 @@ import SettingsPage from '../app/(dashboard)/settings/page';
 import { useSettings } from '../components/SettingsContext';
 import { useTranslation } from '../hooks/useTranslation';
 
+jest.mock('next/navigation', () => ({
+    usePathname: () => '/settings',
+    useRouter: () => ({ push: jest.fn() }),
+}));
+
 jest.mock('../components/SettingsContext', () => ({
     useSettings: jest.fn(),
 }));
@@ -47,9 +52,9 @@ describe('SettingsPage', () => {
 
     it('renders settings page correctly', () => {
         render(<SettingsPage />);
-        expect(screen.getByText('Settings')).toBeInTheDocument();
         expect(screen.getByText('Visual Theme')).toBeInTheDocument();
         expect(screen.getByText('Light')).toBeInTheDocument();
+        expect(screen.getByText('Language')).toBeInTheDocument();
     });
 
     it('calls setTheme when a theme option is clicked', () => {

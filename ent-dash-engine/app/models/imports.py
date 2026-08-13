@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, BigInteger, JSON, DateTime
 from app.db.base import Base
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class FileImport(Base):
@@ -24,10 +24,11 @@ class FileImport(Base):
     total_rows = Column(BigInteger, default=0)
     processed_rows = Column(BigInteger, default=0)
     failed_rows = Column(BigInteger, default=0)
-    status = Column(String(50), default="pending")          # pending | processing | completed | partial | failed
+    status = Column(String(50), default="pending")          # pending | processing | completed | partial | failed | cancelled
+    celery_task_id = Column(String(255), nullable=True)     # Celery task ID for revoke/tracking
 
     error_log = Column(JSON, nullable=True)
     kafka_published = Column(String(5), default="false")    # Track if Kafka event was published
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

@@ -13,6 +13,7 @@ from app.models.role_permission import (                                  # noqa
 )
 from app.models.audit_log import AuditLog                                # noqa: F401
 from app.models.system_config import SystemConfig                        # noqa: F401
+from app.models.translation import Translation                           # noqa: F401
 from app.core.security import get_password_hash                          # noqa: F401
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,13 @@ async def seed_initial_data():
         from app.db.seed import seed_system_configs
         await seed_system_configs(db)
         logger.info("System config seeding completed.")
+
+    # Always run translation seed (idempotent — never overwrites admin edits)
+    async with AsyncSessionLocal() as db:
+        logger.info("Seeding UI translation strings...")
+        from app.db.seed import seed_translations
+        await seed_translations(db)
+        logger.info("Translation seeding completed.")
 
 if __name__ == "__main__":
     # For manual trigger

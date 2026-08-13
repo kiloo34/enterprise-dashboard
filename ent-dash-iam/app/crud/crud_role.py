@@ -2,7 +2,7 @@ from typing import List, Optional, Union, Dict, Any
 from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.crud.base import CRUDBase
+from ent_dash_common.crud import CRUDBase
 from app.models.role_permission import Role, RoleHasPermission
 from app.schemas.rbac import RoleCreate, RoleUpdate
 

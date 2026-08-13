@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta, timezone
 from app.models.audit_log import AuditLog
 from app.services.compliance import ComplianceService
 
@@ -18,7 +18,7 @@ async def test_compliance_report_healthy(db_session):
 @pytest.mark.asyncio
 async def test_compliance_retention_gap(db_session):
     """Test retention gap detection."""
-    old_date = datetime.utcnow() - timedelta(days=6 * 365)
+    old_date = datetime.now(timezone.utc) - timedelta(days=6 * 365)
     
     log1 = AuditLog(
         user_id=1,
@@ -39,7 +39,7 @@ async def test_compliance_retention_gap(db_session):
 @pytest.mark.asyncio
 async def test_compliance_breach_alert(db_session):
     """Test anomaly detection for excessive DATA_EXPORT."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     
     # Generate 15 DATA_EXPORT actions for user 999
     for i in range(15):

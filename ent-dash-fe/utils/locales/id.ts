@@ -135,7 +135,15 @@ export const ID: TranslationSchema = {
         footer: "© 2026 Manajemen Data Perusahaan",
         privacy: "Kebijakan Privasi",
         agreement: "Perjanjian Pengguna",
-        searchMenu: "Cari menu..."
+        searchMenu: "Cari menu...",
+        navPersonal: "Personal",
+        navWorkspace: "Workspace",
+        navAppearance: "Tampilan",
+        navUsers: "Pengguna",
+        navRoles: "Role",
+        navPermissions: "Izin Akses",
+        navSystemConfig: "Konfigurasi Sistem",
+        navTranslations: "Terjemahan",
     },
     Login: {
         welcome: "Selamat Datang Kembali",

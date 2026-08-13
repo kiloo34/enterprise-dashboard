@@ -5,7 +5,7 @@ Security note:
   Credentials (SECRET_KEY, POSTGRES_*, KAFKA_*) must NEVER be stored here.
   Only safe, operator-managed settings belong in this table.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Enum as SAEnum
 import enum
 
@@ -50,5 +50,5 @@ class SystemConfig(Base):
 
     # Audit fields
     updated_by = Column(String(255), nullable=True)   # email of last editor
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)

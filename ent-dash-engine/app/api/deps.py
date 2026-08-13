@@ -1,38 +1,31 @@
 from fastapi import Depends
 from app.core.exceptions import UnauthorizedException
-from fastapi.security import OAuth2PasswordBearer
+from ent_dash_common.auth import make_jwt_dependency
 from jose import jwt, JWTError
 from app.core.config import settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
-
-
-async def get_current_user_payload(token: str = Depends(oauth2_scheme)) -> dict:
-    """
-    Stateless JWT validation — Engine service does NOT query the users table.
-    All user identity comes from the JWT payload issued by the IAM Service.
-    """
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        if payload.get("sub") is None:
-            raise UnauthorizedException(message="Invalid token payload", code="INVALID_TOKEN")
-        return payload
-    except JWTError:
-        raise UnauthorizedException(message="Could not validate credentials", code="INVALID_TOKEN")
+# Engine service does NOT query the users table.
+# All user identity comes from the JWT payload issued by the IAM Service.
+get_current_user_payload = make_jwt_dependency(
+    secret_key=settings.SECRET_KEY,
+    algorithm=settings.ALGORITHM,
+    api_prefix=settings.API_V1_STR
+)
 
 from fastapi import Query
 
-async def get_current_user_from_query(token: str = Query(..., description="JWT access token")) -> dict:
+async def get_current_user_from_query(token: str = Query(..., description="Short-lived SSE ticket")) -> dict:
     """
-    Stateless JWT validation for Server-Sent Events (SSE) which cannot send headers.
+    Validates a short-lived SSE ticket (type='sse', TTL 60s) issued by POST /api/auth/sse-ticket.
+    The main access token must NEVER be passed here to avoid it appearing in server logs.
     """
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        if payload.get("sub") is None:
-            raise UnauthorizedException(message="Invalid token payload", code="INVALID_TOKEN")
+        if payload.get("sub") is None or payload.get("type") != "sse":
+            raise UnauthorizedException(message="Invalid SSE ticket", code="INVALID_TOKEN")
         return payload
     except JWTError:
-        raise UnauthorizedException(message="Could not validate credentials", code="INVALID_TOKEN")
+        raise UnauthorizedException(message="Could not validate SSE ticket", code="INVALID_TOKEN")
 
 
 def require_engine_permission(required_permissions: list[str]):
@@ -55,7 +48,7 @@ def require_engine_permission(required_permissions: list[str]):
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.get(
-                    f"http://iam:8000/api/user/me/permissions",
+                    f"{settings.IAM_BASE_URL}/api/user/me/permissions",
                     headers={"Authorization": f"Bearer {payload.get('_raw_token', '')}"},
                 )
                 # If IAM is unreachable, deny by default (fail-safe)

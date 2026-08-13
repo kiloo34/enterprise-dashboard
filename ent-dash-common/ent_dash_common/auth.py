@@ -22,7 +22,7 @@ Usage in any service:
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta, timezone
 from ent_dash_common.exceptions import UnauthorizedException
 
 
@@ -39,7 +39,7 @@ def validate_jwt_token(token: str, secret_key: str, algorithm: str) -> dict:
 
 def generate_service_token(secret_key: str, algorithm: str, expires_minutes: int = 5) -> str:
     """Generate a valid JWT M2M token for internal inter-service communication."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     payload = {
         "sub": "0",  # 0 indicates a system/service account
         "type": "service",

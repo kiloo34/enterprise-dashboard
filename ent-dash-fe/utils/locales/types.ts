@@ -134,6 +134,15 @@ export interface TranslationSchema {
         privacy: string;
         agreement: string;
         searchMenu: string;
+        // Settings nav labels
+        navPersonal: string;
+        navWorkspace: string;
+        navAppearance: string;
+        navUsers: string;
+        navRoles: string;
+        navPermissions: string;
+        navSystemConfig: string;
+        navTranslations: string;
     };
     Login: {
         welcome: string;

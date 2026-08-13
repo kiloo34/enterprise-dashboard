@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 
 import { SettingsProvider } from "@/components/SettingsContext";
 import { AuthProvider } from "@/components/AuthContext";
+import { TranslationsProvider } from "@/components/TranslationsProvider";
 import { Toaster } from "sonner";
 import { SWRProvider } from "@/components/SWRProvider";
 
@@ -21,10 +22,12 @@ export default function RootLayout({
       <body className="antialiased">
         <AuthProvider>
           <SettingsProvider>
-            <SWRProvider>
-              {children}
-              <Toaster richColors position="top-right" />
-            </SWRProvider>
+            <TranslationsProvider>
+              <SWRProvider>
+                {children}
+                <Toaster richColors position="top-right" />
+              </SWRProvider>
+            </TranslationsProvider>
           </SettingsProvider>
         </AuthProvider>
       </body>

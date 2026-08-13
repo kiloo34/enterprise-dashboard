@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, BigInteger, Boolean, Float, ForeignKey, Date, DateTime
 from sqlalchemy.orm import relationship
 from app.db.base import Base
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class FinancialIndicator(Base):
@@ -28,8 +28,8 @@ class FinancialIndicator(Base):
 
     parent_id = Column(BigInteger, ForeignKey("app.financial_indicators.id"), nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     children = relationship("FinancialIndicator", backref="parent", remote_side=[id])
 
@@ -64,6 +64,6 @@ class FinancialMetric(Base):
     yoy_nominal = Column(Float, nullable=True)
     yoy_pct = Column(Float, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     indicator = relationship("FinancialIndicator")

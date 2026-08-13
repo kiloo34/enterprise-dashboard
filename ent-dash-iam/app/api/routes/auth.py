@@ -5,13 +5,14 @@ from typing import Any
 
 from app.core.config import settings
 from app.db.session import get_db
-from app.core.security import create_access_token, create_refresh_token
+from app.core.security import create_access_token, create_refresh_token, create_sse_ticket
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.services.auth import AuthService
 from app.crud.crud_user import user as crud_user
-from app.api.deps import get_current_user_from_refresh_token
+from app.api.deps import get_current_user_from_refresh_token, get_current_user
 from app.models.user import User
 from app.services.audit import AuditService
+from app.core.rate_limit import limiter
 
 
 router = APIRouter()
@@ -29,16 +30,17 @@ async def health_check(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("5/minute")
 async def login(
-    request: LoginRequest,
-    http_request: Request,
+    login_data: LoginRequest,
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
     auth_service = AuthService(db)
-    user_obj = await auth_service.authenticate(email=request.email, password=request.password)
+    user_obj = await auth_service.authenticate(email=login_data.email, password=login_data.password)
     if not user_obj:
-        await AuditService.log_action(db, None, "LOGIN_FAILED", "Auth", request.email, request=http_request)
+        await AuditService.log_action(db, None, "LOGIN_FAILED", "Auth", "[redacted]", request=request)
         raise UnauthorizedException(
             message="Incorrect email or password",
             code="INVALID_CREDENTIALS"
@@ -53,13 +55,13 @@ async def login(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=not settings.DEBUG,  # True in production (HTTPS)
+        secure=settings.COOKIE_SECURE,
         samesite="lax",
         max_age=settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         path="/"
     )
 
-    await AuditService.log_action(db, user_obj.id, "LOGIN_SUCCESS", "Auth", request.email, request=http_request)
+    await AuditService.log_action(db, user_obj.id, "LOGIN_SUCCESS", "Auth", login_data.email, request=request)
 
     return {
         "access_token": access_token,
@@ -70,7 +72,9 @@ async def login(
 
 
 @router.post("/refresh", response_model=TokenResponse)
+@limiter.limit("10/minute")
 async def refresh_token(
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user_from_refresh_token)
@@ -85,7 +89,7 @@ async def refresh_token(
         key="refresh_token",
         value=new_refresh_token,
         httponly=True,
-        secure=not settings.DEBUG,
+        secure=settings.COOKIE_SECURE,
         samesite="lax",
         max_age=settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         path="/"
@@ -99,13 +103,28 @@ async def refresh_token(
     }
 
 
+@router.post("/sse-ticket")
+@limiter.limit("5/minute")
+async def issue_sse_ticket(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """
+    Issue a short-lived SSE ticket (TTL 60 seconds) for the Engine notifications endpoint.
+    Clients should call this before opening an EventSource connection so that the
+    main access token is never exposed in URL query strings or server logs.
+    """
+    ticket = create_sse_ticket(subject=current_user.id)
+    return {"sse_ticket": ticket, "expires_in": 60}
+
+
 @router.post("/logout")
 async def logout(response: Response, http_request: Request, db: AsyncSession = Depends(get_db)) -> Any:
     """Clear refresh token cookie."""
     response.delete_cookie(
         key="refresh_token",
         path="/",
-        secure=not settings.DEBUG,
+        secure=settings.COOKIE_SECURE,
         httponly=True,
         samesite="lax"
     )

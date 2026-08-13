@@ -1,7 +1,12 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Users } from 'lucide-react';
+
+jest.mock('next/navigation', () => ({
+    usePathname: () => '/dashboard',
+    useRouter: () => ({ push: jest.fn() }),
+}));
 
 describe('PageHeader', () => {
     it('renders title correctly', () => {

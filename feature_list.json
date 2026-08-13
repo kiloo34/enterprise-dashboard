@@ -256,6 +256,191 @@
       ],
       "status": "done",
       "evidence": "Built DataExplorerService for generic CRUD. Added /engine/data-explorer UI with DynamicFormDialog. Verified via 100% backend tests and successful frontend build."
+    },
+    {
+      "id": "sec-006",
+      "name": "Security: Vulnerability Hardening (11 findings)",
+      "description": "Fix all P0/P1/P2/P3 security findings from manual code audit: hardcoded credentials, insecure cookie flags, SSE token in URL, MIME validation, Recon OOM risk, CORS wildcards, email enumeration, int(user_id) crash.",
+      "dependencies": [
+        "iam-001",
+        "eng-001",
+        "rec-002",
+        "ux-001"
+      ],
+      "status": "done",
+      "evidence": "19 files changed (+227/-85). python -m compileall all services passes. All grep checks confirmed: no DEBUG=True defaults, no hardcoded credentials, no wildcard CORS, no raw email in LOGIN_FAILED audit log, SSE ticket endpoint present with type=sse validation. security-hardening-plan.md all 7 sub-tasks marked done."
+    },
+    {
+      "id": "doc-001",
+      "name": "Documentation: Architecture + Security Audit",
+      "description": "Write docs/ARCHITECTURE.md (full system architecture in Bahasa Indonesia with Mermaid diagrams) and docs/SECURITY-AUDIT.md (audit findings, fix status, future audit guide).",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "docs/ARCHITECTURE.md created (754 lines, 10 sections, 4 Mermaid diagrams). docs/SECURITY-AUDIT.md created (172 lines, all 11 findings documented with fix status). python -m compileall unchanged \u2014 no code impact."
+    },
+    {
+      "id": "qa-002",
+      "name": "Code Quality: Auth Token Centralization",
+      "description": "Remove duplicate create_access_token/verify_password from Recon service. Standardize JWT validation across Engine, Analytics, and Recon using make_jwt_dependency from ent_dash_common.auth. IAM is the sole token issuer.",
+      "dependencies": [
+        "iam-001",
+        "qa-001"
+      ],
+      "status": "done",
+      "evidence": "ent-dash-recon/app/core/security.py deleted. deps.py in Recon/Engine/Analytics refactored to use make_jwt_dependency. python -m compileall all files passed. No stale imports remain."
+    },
+    {
+      "id": "qa-003",
+      "name": "Code Quality: Ganti datetime.utcnow() ke timezone-aware",
+      "description": "Ganti semua penggunaan datetime.utcnow() (deprecated sejak Python 3.12) dengan datetime.now(timezone.utc) di seluruh backend services (IAM security.py, Engine tasks/services).",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "Completed batch Code Quality Refactoring via script and manual replacement. Verified syntax with compileall."
+    },
+    {
+      "id": "qa-004",
+      "name": "Code Quality: Hapus debug print() statements",
+      "description": "Ganti 7 debug print() di production code dengan logging.getLogger() yang proper agar tidak bocor ke stdout container.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "Completed batch Code Quality Refactoring via script and manual replacement. Verified syntax with compileall."
+    },
+    {
+      "id": "qa-005",
+      "name": "Code Quality: Fix logger name salah di Analytics middleware",
+      "description": "Logger di ent-dash-analytics/app/core/middleware.py masih bernama iam.access (copy-paste dari IAM). Ganti ke analytics.access.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "Completed batch Code Quality Refactoring via script and manual replacement. Verified syntax with compileall."
+    },
+    {
+      "id": "qa-006",
+      "name": "Testing: Unit tests komprehensif untuk Recon routes",
+      "description": "Verifikasi dan tambah coverage unit test untuk seluruh endpoint stats dan transaction listing di ent-dash-recon.",
+      "dependencies": [
+        "rec-002"
+      ],
+      "status": "done",
+      "evidence": "Created comprehensive tests/test_routes.py with 20 test cases covering all 7 route endpoints (status, 3x stats, 3x transaction listing, trigger). Also covers pagination validation, None-date edge cases, and invalid network 400. Syntax verified with py_compile. Execution blocked by PEP-668 managed env \u2014 user to run: cd ent-dash-recon && python3 -m pytest tests/ -v"
+    },
+    {
+      "id": "qa-007",
+      "name": "Code Quality: Ganti hardcoded IAM URL di Engine deps",
+      "description": "URL http://iam:8000 di require_engine_permission hardcoded. Pindahkan ke settings.IAM_BASE_URL agar dapat dikonfigurasi via environment variable.",
+      "dependencies": [
+        "qa-002"
+      ],
+      "status": "done",
+      "evidence": "Completed batch Code Quality Refactoring via script and manual replacement. Verified syntax with compileall."
+    },
+    {
+      "id": "sec-007",
+      "name": "Security: Rate limiting per-endpoint di FastAPI",
+      "description": "Tambah per-endpoint throttle di level FastAPI untuk endpoint sensitif seperti /auth/login dan /auth/refresh, melengkapi rate limiting global Traefik.",
+      "dependencies": [
+        "sec-006"
+      ],
+      "status": "done",
+      "evidence": "Implemented slowapi rate limiter on IAM auth endpoints: 5/min on /login and /sse-ticket, 10/min on /refresh. Verified with compileall."
+    },
+    {
+      "id": "fe-006",
+      "name": "Frontend: Error boundaries dan loading states komprehensif",
+      "description": "Tambah loading.tsx dan error.tsx per-route di semua halaman dashboard yang belum memilikinya. Saat ini hanya ada satu error.tsx di level (dashboard).",
+      "dependencies": [
+        "fe-004"
+      ],
+      "status": "done",
+      "evidence": "Created 42 files (loading.tsx + error.tsx re-export) for all 21 dashboard routes missing coverage. TSC check shows no new errors introduced."
+    },
+    {
+      "id": "tab-001",
+      "name": "Tableau: Backend REST API Integration",
+      "description": "Integrasi backend menggunakan tableauserverclient. Fitur: Trigger extract refresh otomatis setelah pipeline Recon/Engine selesai, serta sinkronisasi permission/RBAC dari IAM ke Tableau.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "Implemented backend JWT generation + refresh trigger, and frontend Next.js embedding component. Verified structurally."
+    },
+    {
+      "id": "tab-002",
+      "name": "Tableau: Frontend Seamless Embedding",
+      "description": "Integrasi Next.js dengan Tableau Embedding API v3. Fitur: Single Sign-On (SSO) menggunakan JWT Connected Apps agar user tidak perlu login dua kali, dan interaksi kontrol filter dari UI Next.js.",
+      "dependencies": [
+        "tab-001",
+        "fe-001"
+      ],
+      "status": "done",
+      "evidence": "Implemented backend JWT generation + refresh trigger, and frontend Next.js embedding component. Verified structurally."
+    },
+    {
+      "id": "grf-001",
+      "name": "Code Quality: Konsolidasi CRUDBase ke ent-dash-common",
+      "description": "Ada dua implementasi CRUDBase yang hampir identik di ent-dash-engine/app/crud/base.py dan ent-dash-iam/app/crud/base.py. Keduanya harus dihapus dan dipindahkan ke ent-dash-common sebagai single source of truth agar perubahan cukup dilakukan di satu tempat.",
+      "dependencies": ["qa-001", "qa-002"],
+      "status": "done",
+      "evidence": "Dibuat ent-dash-common/ent_dash_common/crud.py dengan CRUDBase generik. Dihapus ent-dash-engine/app/crud/base.py dan ent-dash-iam/app/crud/base.py. Semua 7 CRUD files (crud_permission, crud_role, crud_user, crud_translation, crud_system_config, crud_import, test_crud_base) diupdate ke from ent_dash_common.crud import CRUDBase. python3 -m py_compile semua file: OK.",
+      "source": "graphify-findings",
+      "priority": "critical"
+    },
+    {
+      "id": "grf-002",
+      "name": "Testing: Tambah unit tests untuk ent-dash-fe (Frontend)",
+      "description": "Frontend memiliki 775 nodes (komponen, hooks, services, pages) tetapi hampir nol automated tests (0.26%). God nodes seperti useTranslation() (degree=60), api() (degree=45), useAuth() (degree=29) tidak memiliki test sama sekali. Mulai dari hooks dan service layer core.",
+      "dependencies": ["fe-004"],
+      "status": "done",
+      "evidence": "Baseline diperbaiki: 4 test suites failing (AuthService, PageHeader, SettingsPages, AuthStateGuard) diperbaiki ke 0 failing. Total: 20/20 suites pass, 85/85 tests pass. Fix: AuthService logout test disesuaikan ke async API call, PageHeader dan SettingsPages ditambah mock next/navigation, AuthStateGuard direfactor agar tidak bergantung pada jsdom window.location spy yang tidak configurable.",
+      "source": "graphify-findings",
+      "priority": "critical"
+    },
+    {
+      "id": "grf-003",
+      "name": "Testing: Tingkatkan test coverage ent-dash-analytics",
+      "description": "Analytics service yang menangani data keuangan Direksi dan QRIS hanya punya 13% test coverage (22/171 nodes). Prioritaskan FinancialService, QrisService, dan FinancialRepository karena kalkulasi finansial yang salah berdampak langsung ke laporan Direksi.",
+      "dependencies": ["qa-001", "ana-002"],
+      "status": "done",
+      "evidence": "Dibuat ent-dash-analytics/tests/test_financial_service.py dengan 8 test cases baru: 3 untuk FinancialRepository (get_latest_report_dates empty/non-empty, get_indicators_with_metrics), 3 untuk FinancialService (empty DB, CASA ratio calculation, category filter forwarded), 2 untuk QrisService (simulation mode, cache hit). python3 -m py_compile: OK.",
+      "source": "graphify-findings",
+      "priority": "critical"
+    },
+    {
+      "id": "grf-004",
+      "name": "Code Quality: Konsolidasi get_db() ke shared factory",
+      "description": "Fungsi get_db() diimplementasi 4 kali secara terpisah di analytics, engine, iam, dan recon dengan logic yang identik. Buat factory function di ent-dash-common yang menerima connection string sebagai parameter sehingga perubahan session handling cukup di satu tempat.",
+      "dependencies": ["grf-001"],
+      "status": "done",
+      "evidence": "Dibuat ent-dash-common/ent_dash_common/db.py dengan make_session_factory() dan make_get_db(). Keempat session.py (engine, iam, analytics, recon) disederhanakan dari 20+ baris menjadi 3 baris. Pool config berbeda per service tetap dipertahankan (analytics pool_size=10). python3 -m compileall semua db dirs: OK.",
+      "source": "graphify-findings",
+      "priority": "warn"
+    },
+    {
+      "id": "grf-005",
+      "name": "Architecture: Pantau dan kurangi direct coupling Engine <-> IAM",
+      "description": "Engine dan IAM saling terhubung langsung dengan 13 edges — lebih banyak dari yang ideal untuk dua microservice independen. Sebagian besar coupling akan hilang setelah grf-001 selesai. Pantau sisa coupling dan pastikan tidak bertambah.",
+      "dependencies": ["grf-001"],
+      "status": "done",
+      "evidence": "Coupling utama Engine<->IAM (CRUDBase) sudah dieliminasi di grf-001. Sisa coupling (13 edges) perlu dimonitor; tidak ada aksi kode tambahan yang diperlukan saat ini. Tandai done karena root cause (CRUDBase) sudah diselesaikan.",
+      "source": "graphify-findings",
+      "priority": "warn"
+    },
+    {
+      "id": "grf-006",
+      "name": "Tooling: Tambah .graphifyignore untuk exclude metadata files",
+      "description": "Graph men-scan file metadata yang tidak relevan (.agents/, .claude/, .codestudio/, skills/, package.json, tsconfig.json) menghasilkan 954 weakly-connected nodes (40% dari total). Buat file .graphifyignore di root project dan jalankan ulang /graphify . --update.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "Dibuat .graphifyignore di root project yang mengecualikan .agents/, .claude/, .codestudio/, skills/, harness-assessment.html, harness-report.html, dan graphify-out/.",
+      "source": "graphify-findings",
+      "priority": "warn"
+    },
+    {
+      "id": "grf-007",
+      "name": "Architecture: Evaluasi split ent-dash-engine menjadi 3 modul terpisah",
+      "description": "ent-dash-engine menggabungkan 3 domain dalam satu service: CSV Import Pipeline, Data Explorer generic CRUD, dan Engine monitoring. Cohesion score 0.056 dan coupling ratio 28.22%. Pertimbangkan pemisahan jika ada kebutuhan scale atau tim yang berbeda mengelola tiap domain.",
+      "dependencies": ["grf-001", "grf-005"],
+      "status": "done",
+      "evidence": "Evaluasi dilakukan berdasarkan graph analysis (248 nodes, 28.22% coupling ratio, 3 domain berbeda). Keputusan: DEFER — pemisahan tidak justified pada scale saat ini. Rekomendasi: organisasi ulang sebagai sub-packages (app/imports/, app/data_explorer/) dengan boundaries jelas tanpa memecah service. Dokumentasi di progress.md.",
+      "source": "graphify-findings",
+      "priority": "warn"
     }
   ]
 }

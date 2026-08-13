@@ -9,7 +9,7 @@ from starlette.responses import Response
 from jose import jwt, JWTError
 from app.core.config import settings
 
-logger = logging.getLogger("iam.access")
+logger = logging.getLogger("analytics.access")
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):

@@ -1,9 +1,27 @@
 import pandas as pd
 import logging
+from datetime import date, timedelta
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from app.worker import celery_app
 from app.core.config import settings
+import httpx
+from ent_dash_common.auth import generate_service_token
+
+logger = logging.getLogger(__name__)
+
+def _trigger_tableau_refresh(datasource_id: str):
+    """Triggers tableau refresh in analytics service."""
+    try:
+        token = generate_service_token(settings.SECRET_KEY, settings.ALGORITHM)
+        with httpx.Client(timeout=10.0) as client:
+            client.post(
+                "http://analytics:8000/api/tableau/refresh",
+                json={"datasource_id": datasource_id},
+                headers={"Authorization": f"Bearer {token}"}
+            )
+    except Exception as e:
+        logger.error(f"Failed to notify Analytics for Tableau refresh: {e}")
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +43,24 @@ ReconSession = sessionmaker(bind=_recon_db)
 def reconcile_qris_aj(self):
     logger.info("[Recon] Starting QRIS Artajasa reconciliation task...")
     try:
-        # Load raw data from engine database
+        # Load raw data from engine database with date filter and row limit
+        since = date.today() - timedelta(days=settings.RECON_LOOKBACK_DAYS)
         with _engine_db.connect() as conn:
-            df = pd.read_sql("SELECT * FROM rekon.rekon_qris_aj", conn)
-        
+            df = pd.read_sql(
+                text(
+                    "SELECT * FROM rekon.rekon_qris_aj "
+                    "WHERE transaction_date >= :since "
+                    "LIMIT :max_rows"
+                ),
+                conn,
+                params={"since": since, "max_rows": settings.RECON_MAX_ROWS},
+            )
+        if len(df) >= settings.RECON_MAX_ROWS:
+            logger.warning(
+                f"[Recon AJ] Result truncated at {settings.RECON_MAX_ROWS} rows. "
+                "Consider reducing RECON_LOOKBACK_DAYS or increasing RECON_MAX_ROWS."
+            )
+
         if df.empty:
             logger.info("[Recon] No Artajasa transactions found in engine database.")
             # Clear target recon table anyway
@@ -123,6 +155,7 @@ def reconcile_qris_aj(self):
                 session.commit()
                 
         logger.info(f"[Recon] Reconciled {len(reconciled_records)} transactions for Artajasa.")
+        _trigger_tableau_refresh("qris_aj_ds_id") # Map to actual Tableau Datasource ID
         return {"status": "success", "processed_rows": len(reconciled_records)}
         
     except Exception as exc:
@@ -134,9 +167,23 @@ def reconcile_qris_aj(self):
 def reconcile_qris_rintis(self):
     logger.info("[Recon] Starting QRIS Rintis reconciliation task...")
     try:
+        since = date.today() - timedelta(days=settings.RECON_LOOKBACK_DAYS)
         with _engine_db.connect() as conn:
-            df = pd.read_sql("SELECT * FROM rekon.rekon_qris_rintis", conn)
-        
+            df = pd.read_sql(
+                text(
+                    "SELECT * FROM rekon.rekon_qris_rintis "
+                    "WHERE transaction_date >= :since "
+                    "LIMIT :max_rows"
+                ),
+                conn,
+                params={"since": since, "max_rows": settings.RECON_MAX_ROWS},
+            )
+        if len(df) >= settings.RECON_MAX_ROWS:
+            logger.warning(
+                f"[Recon Rintis] Result truncated at {settings.RECON_MAX_ROWS} rows. "
+                "Consider reducing RECON_LOOKBACK_DAYS or increasing RECON_MAX_ROWS."
+            )
+
         if df.empty:
             logger.info("[Recon] No Rintis transactions found in engine database.")
             with ReconSession() as session:
@@ -294,6 +341,7 @@ def reconcile_qris_rintis(self):
                 session.commit()
 
         logger.info(f"[Recon] Reconciled {len(reconciled_records)} transactions for Rintis.")
+        _trigger_tableau_refresh("qris_rintis_ds_id") # Map to actual Tableau Datasource ID
         return {"status": "success", "processed_rows": len(reconciled_records)}
 
     except Exception as exc:
@@ -305,9 +353,23 @@ def reconcile_qris_rintis(self):
 def reconcile_qris_onus(self):
     logger.info("[Recon] Starting QRIS ONUS reconciliation task...")
     try:
+        since = date.today() - timedelta(days=settings.RECON_LOOKBACK_DAYS)
         with _engine_db.connect() as conn:
-            df = pd.read_sql("SELECT * FROM rekon.rekon_qris_onus", conn)
-        
+            df = pd.read_sql(
+                text(
+                    "SELECT * FROM rekon.rekon_qris_onus "
+                    "WHERE transaction_date >= :since "
+                    "LIMIT :max_rows"
+                ),
+                conn,
+                params={"since": since, "max_rows": settings.RECON_MAX_ROWS},
+            )
+        if len(df) >= settings.RECON_MAX_ROWS:
+            logger.warning(
+                f"[Recon ONUS] Result truncated at {settings.RECON_MAX_ROWS} rows. "
+                "Consider reducing RECON_LOOKBACK_DAYS or increasing RECON_MAX_ROWS."
+            )
+
         if df.empty:
             logger.info("[Recon] No ONUS transactions found in engine database.")
             with ReconSession() as session:
@@ -452,6 +514,7 @@ def reconcile_qris_onus(self):
                 session.commit()
 
         logger.info(f"[Recon] Reconciled {len(reconciled_records)} transactions for ONUS.")
+        _trigger_tableau_refresh("qris_onus_ds_id") # Map to actual Tableau Datasource ID
         return {"status": "success", "processed_rows": len(reconciled_records)}
 
     except Exception as exc:

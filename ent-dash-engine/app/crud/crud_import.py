@@ -1,7 +1,7 @@
 from typing import List, Optional, Any, Dict
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.crud.base import CRUDBase
+from ent_dash_common.crud import CRUDBase
 from app.models.imports import FileImport
 from pydantic import BaseModel
 
@@ -23,6 +23,7 @@ class FileImportUpdate(BaseModel):
     failed_rows: Optional[int] = None
     error_log: Optional[Dict[str, Any]] = None
     kafka_published: Optional[str] = None
+    celery_task_id: Optional[str] = None
 
 
 class CRUDFileImport(CRUDBase[FileImport, FileImportCreate, FileImportUpdate]):

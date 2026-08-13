@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     # Database
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "password"
+    POSTGRES_PASSWORD: str  # No default — service fails to start if not set
     POSTGRES_DB: str = "ent_dash_recon"
     POSTGRES_PORT: str = "5432"
 
@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     # API Keys
     GEMINI_API_KEY: str = ""
     CELERY_BROKER_URL: str = "redis://redis:6379/0"
+
+    # Reconciliation windowing — controls how much historical data each task processes.
+    # RECON_LOOKBACK_DAYS: only reconcile transactions from the last N days.
+    # RECON_MAX_ROWS: hard cap on rows loaded into memory per task run.
+    RECON_LOOKBACK_DAYS: int = 7
+    RECON_MAX_ROWS: int = 500000
 
     # Kafka Config
     KAFKA_BOOTSTRAP_SERVERS: str = "redpanda:9092"

@@ -1,0 +1,13 @@
+# .graphifyignore — exclude non-application files from knowledge graph
+# Agent/IDE metadata dirs (skill files, harness templates, configs)
+.agents/
+.claude/
+.codestudio/
+skills/
+
+# Graphify output (avoid re-scanning its own output)
+graphify-out/
+
+# Generated HTML reports (not application code)
+harness-assessment.html
+harness-report.html

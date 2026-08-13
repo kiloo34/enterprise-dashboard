@@ -34,7 +34,7 @@ export default function RolesPage() {
     } = useRoleManagement();
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="space-y-6">
             <PageHeader
                 title={t.title}
                 description={t.subtitle}

@@ -39,7 +39,7 @@ class ComplianceService:
     async def _check_retention_gap(self) -> int:
         """Count how many audit logs exceed the 5-year retention period."""
         # Using naive datetime to match AuditLog.created_at default (datetime.utcnow)
-        retention_cutoff_naive = datetime.utcnow() - timedelta(days=self.retention_years * 365)
+        retention_cutoff_naive = (datetime.now(timezone.utc) - timedelta(days=self.retention_years * 365)).replace(tzinfo=None)
         
         stmt = select(func.count(AuditLog.id)).where(AuditLog.created_at < retention_cutoff_naive)
         result = await self.db.execute(stmt)
@@ -47,7 +47,7 @@ class ComplianceService:
 
     async def _detect_anomalies(self) -> List[Dict[str, Any]]:
         """Detect users with excessive DATA_EXPORT actions within the last 24 hours."""
-        recent_cutoff = datetime.utcnow() - timedelta(hours=24)
+        recent_cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).replace(tzinfo=None)
         
         stmt = (
             select(

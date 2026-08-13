@@ -1,0 +1,18 @@
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+Initializing database schema and tables...
+Schema 'app' verified/created.
+Database tables initialized successfully.
+Database already seeded. Skipping initial seeding.
+Seeding system configuration defaults...
+System config seeding completed (8 entries).
+System config seeding completed.
+Seeding UI translation strings...
+Translation seeding completed (394 entries across ID + EN).
+Translation seeding completed.
+Database initialization successful.
+[ConfigService] Loaded 8 configuration entries.
+System configuration cache loaded.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+{"request_id": "07f0445a-feec-4953-8d50-c2f0105e61e3", "method": "POST", "path": "/api/auth/refresh", "status_code": 200, "latency_ms": 194.43, "user_email": null}

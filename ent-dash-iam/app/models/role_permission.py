@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, BigInteger, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class Role(Base):
@@ -11,8 +11,8 @@ class Role(Base):
     id = Column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, index=True, autoincrement=True)
     name = Column(String, unique=True, index=True, nullable=False)
     guard_name = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     # Relationship to permissions
     permissions = relationship(

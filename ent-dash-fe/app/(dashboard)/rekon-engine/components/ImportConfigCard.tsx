@@ -91,6 +91,8 @@ export function ImportConfigCard({
                     isUploading={isUploading}
                     progress={uploadProgress}
                     onUpload={handleUpload}
+                    accept=".csv,.txt,.xlsx,.xls"
+                    maxSizeDesc="Max 100 MB"
                     labels={{
                         title: t.fileLabel,
                         select: t.selectFile,

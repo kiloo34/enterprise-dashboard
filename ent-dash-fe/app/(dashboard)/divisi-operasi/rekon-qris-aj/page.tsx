@@ -12,7 +12,7 @@ import { api } from "@/utils/api";
 
 export default function RekonQrisDashboard() {
     const t = useTranslation("Reconciliation");
-    const [globalDate, setGlobalDate] = useState(getTodayIsoString());
+    const [globalDate, setGlobalDate] = useState("");
 
     // Fetch dynamic metrics
     const { data: metrics, isLoading } = useSWR("/api/recon/dashboard/aj-stats", (url: string) => api<{ totalTransactions: number; settledAmount: number; unsettledAmount: number; totalDiscrepancyAmount: number }>(url));

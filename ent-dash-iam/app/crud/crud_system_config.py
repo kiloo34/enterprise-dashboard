@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.crud.base import CRUDBase
+from ent_dash_common.crud import CRUDBase
 from app.models.system_config import SystemConfig
 from app.schemas.system_config import SystemConfigCreate, SystemConfigUpdate
 

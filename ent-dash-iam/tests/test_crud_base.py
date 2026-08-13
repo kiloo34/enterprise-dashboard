@@ -10,7 +10,7 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base_class import Base
-from app.crud.base import CRUDBase
+from ent_dash_common.crud import CRUDBase
 
 
 # ── Minimal in-test model & schemas ───────────────────────────────────────────

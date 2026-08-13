@@ -37,17 +37,15 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
         t, pathname,
         searchQuery, setSearchQuery, hasResults, showDireksi, showOperasi, showEngine,
         isDashboardOpen, setIsDashboardOpen, isDireksiOpen, setIsDireksiOpen,
-        isOperasiOpen, setIsOperasiOpen, isAccessOpen, setIsAccessOpen,
+        isOperasiOpen, setIsOperasiOpen,
         isEngineOpen, setIsEngineOpen,
         isDashboardActive, isDireksiActive, isOperasiActive,
         isEngineActive,
         isImportActive,
-        isAccessActive,
         canViewDashboardKeuangan, canViewDashboardOperasi, canViewEngineMonitoring,
-        canManageAccess, canViewKeuanganKinerja, canViewOperasiSummary,
+        canViewKeuanganKinerja, canViewOperasiSummary,
         canViewRekonQrisAj, canViewRekonQrisRintis, canViewRekonQrisOnUs,
-        canManageUser, canManageRbac,
-        isDireksiRole, isOperasiRole, isDireksiUnit, isOperasiUnit, isEDMUnit, isAdmin,
+        isDireksiRole, isOperasiRole, isDireksiUnit, isOperasiUnit, isAdmin,
         user,
     } = useSidebarNavigation();
 
@@ -58,8 +56,7 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
         canViewEngineMonitoring && { href: "/rekon-engine/import", icon: UploadCloud, label: t.importData, active: isImportActive },
         canViewEngineMonitoring && { href: "/rekon-engine", icon: Database, label: t.monitoring, active: isEngineActive },
         canViewEngineMonitoring && { href: "/engine/data-explorer", icon: Database, label: "Data Explorer", active: pathname === "/engine/data-explorer" },
-        canManageAccess && { href: "/settings/users", icon: Shield, label: t.manageAccess, active: isAccessActive },
-        { href: "/settings", icon: Settings, label: t.settings, active: pathname === "/settings" },
+        { href: "/settings", icon: Settings, label: t.settings, active: pathname.startsWith("/settings") },
         { href: "#", icon: HelpCircle, label: t.support, active: false },
     ].filter(Boolean) as { href: string; icon: React.ElementType; label: string; active: boolean }[];
 
@@ -271,36 +268,7 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
                                         active={pathname === "/admin/monitoring"}
                                     />
                                 )}
-                                {canManageAccess && (
-                                    <SidebarMenuDropdown
-                                        isOpen={isAccessOpen}
-                                        onToggle={() => setIsAccessOpen(!isAccessOpen)}
-                                        icon={Shield}
-                                        label={t.manageAccess}
-                                        active={isAccessActive}
-                                    >
-                                        <div className="pl-2">
-                                            {canManageUser && <SidebarNavItem href="/settings/users" icon={Users} label={t.manageUser} active={pathname.startsWith("/settings/users")} isSubItem />}
-                                            {canManageRbac && (
-                                                <>
-                                                    <SidebarNavItem href="/settings/roles" icon={Shield} label={t.manageRbac} active={pathname.startsWith("/settings/roles")} isSubItem />
-                                                    <SidebarNavItem href="/settings/permissions" icon={Shield} label={t.managePermission} active={pathname.startsWith("/settings/permissions")} isSubItem />
-                                                </>
-                                            )}
-                                        </div>
-                                    </SidebarMenuDropdown>
-                                )}
-
-                                {isAdmin && (
-                                    <SidebarNavItem
-                                        href="/settings/system-config"
-                                        icon={Database}
-                                        label="Konfigurasi Sistem"
-                                        active={pathname.startsWith("/settings/system-config")}
-                                    />
-                                )}
-
-                                <SidebarNavItem href="/settings" icon={Settings} label={t.settings} active={pathname === "/settings"} />
+                                <SidebarNavItem href="/settings" icon={Settings} label={t.settings} active={pathname.startsWith("/settings")} />
                                 <SidebarNavItem href="#" icon={HelpCircle} label={t.support} />
                             </div>
                         </div>

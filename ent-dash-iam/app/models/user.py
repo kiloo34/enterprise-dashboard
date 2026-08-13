@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, BigInteger, JSON, DateTime, Boolean, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class User(Base):
@@ -25,8 +25,8 @@ class User(Base):
     two_factor_confirmed_at = Column(DateTime, nullable=True)
     remember_token = Column(String, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     # Relationships
     position = relationship("Position", foreign_keys=[position_id])
@@ -48,8 +48,8 @@ class Position(Base):
     name = Column(String, nullable=False)
     level = Column(BigInteger, nullable=False)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
 class OrganizationUnit(Base):
@@ -62,8 +62,8 @@ class OrganizationUnit(Base):
     type = Column(String, nullable=False)
     parent_id = Column(BigInteger, ForeignKey("app.organization_units.id"), nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     # Hierarchy Relationships
     parent = relationship("OrganizationUnit", remote_side=[id], back_populates="children")

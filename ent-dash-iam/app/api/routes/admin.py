@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 from typing import Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import httpx
 import logging
 
@@ -24,7 +24,7 @@ async def get_system_stats(
     
     # 1. IAM Stats: Users
     total_users = await db.scalar(select(func.count(User.id))) or 0
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).replace(tzinfo=None)
     recent_users_count = await db.scalar(
         select(func.count(User.id)).where(User.created_at >= thirty_days_ago)
     ) or 0

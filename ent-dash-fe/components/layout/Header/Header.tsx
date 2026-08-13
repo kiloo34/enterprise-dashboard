@@ -28,6 +28,8 @@ export function Header({ onMenuClick }: HeaderProps) {
         if (pathname.includes("/divisi-operasi/rekon-qris-on-us")) return tSidebar.rekonQrisOnus;
         if (pathname.includes("/divisi-operasi/rekon-qris")) return tSidebar.rekonQris;
         if (pathname.includes("/divisi-operasi/summary")) return "Operations Summary";
+        if (pathname.includes("/settings/translations")) return tSidebar.managePermission;
+        if (pathname.includes("/settings/permissions")) return tSidebar.managePermission;
         if (pathname.includes("/settings/roles")) return tSidebar.manageRbac;
         if (pathname.includes("/settings/users")) return tSidebar.manageUser;
         if (pathname.includes("/settings/system-config")) return "Konfigurasi Sistem";

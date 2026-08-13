@@ -14,7 +14,6 @@ export function useSidebarNavigation() {
     const [isDashboardOpen, setIsDashboardOpen] = useState(true);
     const [isDireksiOpen, setIsDireksiOpen] = useState(false);
     const [isOperasiOpen, setIsOperasiOpen] = useState(false);
-    const [isAccessOpen, setIsAccessOpen] = useState(false);
     const [isEngineOpen, setIsEngineOpen] = useState(false);
 
     const permissions = user?.permissions || [];
@@ -51,7 +50,6 @@ export function useSidebarNavigation() {
     const isOperasiActive = pathname.startsWith("/divisi-operasi");
     const isEngineActive = pathname.startsWith("/engine") || pathname.startsWith("/rekon-engine");
     const isImportActive = pathname.startsWith("/rekon-engine/import");
-    const isAccessActive = pathname.startsWith("/settings/users") || pathname.startsWith("/settings/roles") || pathname.startsWith("/settings/permissions");
 
     // --- Auto Expand/Collapse ---
     useEffect(() => {
@@ -80,9 +78,8 @@ export function useSidebarNavigation() {
             setIsDireksiOpen(isDireksiActive);
             setIsOperasiOpen(isOperasiActive);
             setIsEngineOpen(isEngineActive);
-            setIsAccessOpen(isAccessActive);
         }
-    }, [pathname, isDashboardActive, isDireksiActive, isOperasiActive, isEngineActive, isAccessActive, canViewDashboardKeuangan, canViewDashboardOperasi, canViewEngineMonitoring, canManageAccess, searchQuery, t.direkturUtama, t.direksi, t.rekonQris, t.rekonQrisOnus, t.rekonQrisRintis, t.divisiOperasi, t.engine, t.reconciliation]);
+    }, [pathname, isDashboardActive, isDireksiActive, isOperasiActive, isEngineActive, canViewDashboardKeuangan, canViewDashboardOperasi, canViewEngineMonitoring, canManageAccess, searchQuery, t.direkturUtama, t.direksi, t.rekonQris, t.rekonQrisOnus, t.rekonQrisRintis, t.divisiOperasi, t.engine, t.reconciliation]);
 
     // --- Filtering Logic ---
     const searchLower = searchQuery?.toLowerCase() || "";
@@ -114,8 +111,6 @@ export function useSidebarNavigation() {
         setIsDireksiOpen,
         isOperasiOpen,
         setIsOperasiOpen,
-        isAccessOpen,
-        setIsAccessOpen,
         isEngineOpen,
         setIsEngineOpen,
 
@@ -125,7 +120,6 @@ export function useSidebarNavigation() {
         isOperasiActive,
         isEngineActive,
         isImportActive,
-        isAccessActive,
 
         // Permissions
         canViewDashboardKeuangan,

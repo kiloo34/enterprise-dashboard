@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, BigInteger, Integer, JSON, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
-from datetime import datetime
+from datetime import datetime, timezone
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
@@ -26,7 +26,7 @@ class AuditLog(Base):
     details = Column(JSON, nullable=True)
     payload = Column(JSON, nullable=True)
     
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), index=True)
 
     # Relationships
     user = relationship("User", foreign_keys=[user_id])

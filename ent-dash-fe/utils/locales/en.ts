@@ -135,7 +135,15 @@ export const EN: TranslationSchema = {
         footer: "© 2026 Enterprise Data Management",
         privacy: "Privacy Policy",
         agreement: "User Agreement",
-        searchMenu: "Search menu..."
+        searchMenu: "Search menu...",
+        navPersonal: "Personal",
+        navWorkspace: "Workspace",
+        navAppearance: "Appearance",
+        navUsers: "Users",
+        navRoles: "Roles",
+        navPermissions: "Permissions",
+        navSystemConfig: "System Config",
+        navTranslations: "Translations",
     },
     Login: {
         welcome: "Welcome Back",

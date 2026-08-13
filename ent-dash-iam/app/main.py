@@ -11,6 +11,9 @@ from app.db.init_db import init_db
 from app.services.config_service import config_service
 
 from prometheus_fastapi_instrumentator import Instrumentator
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+from app.core.rate_limit import limiter
 
 # ── Structured logging setup ──────────────────────────────────────────────────
 logging.basicConfig(
@@ -68,10 +71,13 @@ def create_app() -> FastAPI:
         allow_origin_regex=r"http://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+)(:\d+)?",
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-        allow_headers=["*"],
+        allow_headers=["Content-Type", "Authorization", "Accept"],
     )
 
     setup_exception_handlers(app)
+    
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     app.include_router(api_router, prefix=settings.API_V1_STR)
 

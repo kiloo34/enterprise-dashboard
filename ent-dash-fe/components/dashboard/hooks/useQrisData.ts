@@ -31,7 +31,7 @@ export function useQrisData(network: 'aj' | 'onus' | 'rintis', initialDateFilter
         return d.toISOString().split('T')[0];
     };
 
-    const [internalFilterDate, setInternalFilterDate] = useState(getTodayString());
+    const [internalFilterDate, setInternalFilterDate] = useState("");
     const filterDate = initialDateFilter !== undefined ? initialDateFilter : internalFilterDate;
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {

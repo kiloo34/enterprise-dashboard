@@ -55,13 +55,13 @@ def create_app() -> FastAPI:
         allow_origin_regex=r"http://(localhost|127\.0\.0\.1|172\.20\.10\.4)(:\d+)?",
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-        allow_headers=["*"],
-        expose_headers=["*"],
+        allow_headers=["Content-Type", "Authorization", "Accept"],
+        expose_headers=["Content-Type"],
     )
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
-        print(f"HTTPException on {request.method} {request.url}: {exc.status_code} - {exc.detail}")
+        logger.error(f"HTTPException on {request.method} {request.url}: {exc.status_code} - {exc.detail}")
         # If detail is already a dict (our custom format), use it
         if isinstance(exc.detail, dict):
             return JSONResponse(
@@ -80,8 +80,8 @@ def create_app() -> FastAPI:
     @app.exception_handler(Exception)
     async def generic_exception_handler(request: Request, exc: Exception):
         import traceback
-        print(f"CRITICAL: Unhandled exception on {request.method} {request.url}: {exc}")
-        print(traceback.format_exc())
+        logger.error(f"CRITICAL: Unhandled exception on {request.method} {request.url}: {exc}")
+        logger.error(traceback.format_exc())
         return JSONResponse(
             status_code=500,
             content={

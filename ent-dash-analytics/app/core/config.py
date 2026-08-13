@@ -5,12 +5,12 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Analytics Service"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # Database — Analytics owns FinancialIndicator & FinancialMetric
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "password"
+    POSTGRES_PASSWORD: str  # No default — service fails to start if not set
     POSTGRES_DB: str = "ent_dash_analytics"
     POSTGRES_PORT: str = "5432"
 
@@ -56,6 +56,15 @@ class Settings(BaseSettings):
     @property
     def cors_origins(self) -> list[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
+
+    # Tableau Integration
+    TABLEAU_SERVER_URL: str = "https://prod-apnortheast-a.online.tableau.com" # Example for cloud
+    TABLEAU_SITE_NAME: str = ""
+    TABLEAU_CLIENT_ID: str = ""
+    TABLEAU_SECRET_ID: str = ""
+    TABLEAU_SECRET_VALUE: str = ""
+    TABLEAU_PAT_NAME: str = ""
+    TABLEAU_PAT_SECRET: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 

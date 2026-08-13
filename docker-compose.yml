@@ -8,6 +8,8 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entryPoints.web.address=:80"
+      - "--log.level=FATAL"
+      - "--api.insecure=false"
     ports:
       - "80:80"
       - "8080:8080" # Traefik Dashboard
@@ -128,7 +130,7 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.iam.rule=PathPrefix(`/api/auth`) || PathPrefix(`/api/user`) || PathPrefix(`/api/users`) || PathPrefix(`/api/roles`) || PathPrefix(`/api/permissions`) || PathPrefix(`/api/positions`) || PathPrefix(`/api/organization-units`) || PathPrefix(`/api/admin`) || PathPrefix(`/api/system-config`)"
+      - "traefik.http.routers.iam.rule=PathPrefix(`/api/auth`) || PathPrefix(`/api/user`) || PathPrefix(`/api/users`) || PathPrefix(`/api/roles`) || PathPrefix(`/api/permissions`) || PathPrefix(`/api/positions`) || PathPrefix(`/api/organization-units`) || PathPrefix(`/api/admin`) || PathPrefix(`/api/system-config`) || PathPrefix(`/api/translations`)"
       - "traefik.http.routers.iam.entrypoints=web"
       - "traefik.http.routers.iam.priority=50"
       - "traefik.http.services.iam.loadbalancer.server.port=8000"
@@ -188,6 +190,7 @@ services:
       - POSTGRES_DB=ent_dash_engine
       - POSTGRES_PORT=5432
       - SECRET_KEY=${SECRET_KEY}
+      - RECON_DATABASE_URI=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:5432/ent_dash_recon
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - MINIO_ENDPOINT=minio:9000
@@ -232,6 +235,7 @@ services:
       - POSTGRES_DB=ent_dash_engine
       - POSTGRES_PORT=5432
       - SECRET_KEY=${SECRET_KEY}
+      - RECON_DATABASE_URI=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:5432/ent_dash_recon
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - MINIO_ENDPOINT=minio:9000

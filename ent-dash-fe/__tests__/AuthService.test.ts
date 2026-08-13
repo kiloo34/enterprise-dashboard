@@ -36,10 +36,12 @@ describe('AuthService', () => {
         });
     });
 
-    it('logout clears session storage', () => {
-        const removeItemSpy = jest.spyOn(Storage.prototype, 'removeItem');
-        AuthService.logout();
-        expect(removeItemSpy).toHaveBeenCalledWith('auth-user');
-        removeItemSpy.mockRestore();
+    it('logout calls backend logout endpoint', async () => {
+        (api as jest.Mock).mockResolvedValue({});
+        await AuthService.logout();
+        expect(api).toHaveBeenCalledWith('/api/auth/logout', expect.objectContaining({
+            method: 'POST',
+            credentials: 'include',
+        }));
     });
 });
