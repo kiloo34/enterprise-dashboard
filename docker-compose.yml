@@ -12,7 +12,7 @@ services:
       - "--api.insecure=false"
     ports:
       - "80:80"
-      - "8080:8080" # Traefik Dashboard
+      - "127.0.0.1:8080:8080" # Traefik Dashboard — localhost only
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     restart: always
@@ -21,7 +21,7 @@ services:
     image: redis:7-alpine
     container_name: ent_dash_redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379" # localhost only — tidak boleh diakses dari jaringan luar
     restart: always
 
   db:
@@ -30,16 +30,16 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=ent-dash
-      - POSTGRES_MULTIPLE_DATABASES=ent_dash_iam,ent_dash_analytics,ent_dash_engine,ent_dash_recon
+      - POSTGRES_DB=ent_dash_iam
+      - POSTGRES_MULTIPLE_DATABASES=ent_dash_iam,cbskonv,ent_dash_engine,ent_dash_analytics
     ports:
-      - "5434:5432"
+      - "127.0.0.1:5434:5432" # localhost only — akses DB hanya dari mesin lokal
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d
     # I4: Healthcheck — pastikan DB benar-benar siap sebelum service lain startup
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d ent-dash" ]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d ent_dash_iam" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -58,12 +58,11 @@ services:
       - POSTGRES_SERVER=db
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=ent_dash_recon
+      - POSTGRES_DB=cbskonv
       - POSTGRES_PORT=5432
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - SECRET_KEY=${SECRET_KEY}
       - CELERY_BROKER_URL=redis://redis:6379/0
-      - ENGINE_DATABASE_URI=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:5432/ent_dash_engine
       - KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
       - KAFKA_TOPIC_DATA_PROCESSED=engine.data_processed
     volumes:
@@ -76,6 +75,39 @@ services:
       - "traefik.http.routers.recon.rule=PathPrefix(`/api/recon`)"
       - "traefik.http.routers.recon.entrypoints=web"
       - "traefik.http.routers.recon.priority=40"
+    restart: always
+
+  dw:
+    build:
+      context: ./ent-dash-dw
+      dockerfile: Dockerfile
+      additional_contexts:
+        common: ./ent-dash-common
+    image: ent-dash-dw:latest
+    container_name: ent_dash_dw
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=cbskonv
+      - POSTGRES_PORT=5432
+      - SECRET_KEY=${SECRET_KEY}
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
+      - KAFKA_TOPIC_DATA_PROCESSED=engine.data_processed
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dw.rule=PathPrefix(`/api/dw`)"
+      - "traefik.http.routers.dw.entrypoints=web"
+      - "traefik.http.routers.dw.priority=42"
+      - "traefik.http.services.dw.loadbalancer.server.port=8000"
+    # gRPC port — used by analytics service (internal Docker network only)
+    expose:
+      - "50051"
     restart: always
 
   # ─── Recon Celery Worker ──────────────────────────────────────────────────
@@ -92,11 +124,10 @@ services:
       - POSTGRES_SERVER=db
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pekalongan12}
-      - POSTGRES_DB=ent_dash_recon
+      - POSTGRES_DB=cbskonv
       - POSTGRES_PORT=5432
       - SECRET_KEY=${SECRET_KEY:-base64:8C1LsxaMh5a+r++t8oTD0iQllugGC8CF7iWam/Tfaww=}
       - CELERY_BROKER_URL=redis://redis:6379/0
-      - ENGINE_DATABASE_URI=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-pekalongan12}@db:5432/ent_dash_engine
       - KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
       - KAFKA_TOPIC_DATA_PROCESSED=engine.data_processed
     volumes:
@@ -144,6 +175,7 @@ services:
       - "traefik.http.middlewares.login-ratelimit.ratelimit.burst=5"
     restart: always
 
+
   analytics:
     build:
       context: ./ent-dash-analytics
@@ -160,13 +192,15 @@ services:
       - POSTGRES_PORT=5432
       - SECRET_KEY=${SECRET_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      # Engine gRPC connection
-      - ENGINE_GRPC_HOST=engine
+      # gRPC sekarang ke ent-dash-dw (yang punya TABLEAU_REPORT schema di cbskonv)
+      - ENGINE_GRPC_HOST=dw
       - ENGINE_GRPC_PORT=50051
       - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080,http://localhost
     depends_on:
       db:
         condition: service_healthy
+      dw:
+        condition: service_started
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.analytics.rule=PathPrefix(`/api/dashboard`)"
@@ -190,7 +224,6 @@ services:
       - POSTGRES_DB=ent_dash_engine
       - POSTGRES_PORT=5432
       - SECRET_KEY=${SECRET_KEY}
-      - RECON_DATABASE_URI=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:5432/ent_dash_recon
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - MINIO_ENDPOINT=minio:9000
@@ -213,7 +246,7 @@ services:
         condition: service_started
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.engine.rule=PathPrefix(`/api/imports`) || PathPrefix(`/api/engine`)"
+      - "traefik.http.routers.engine.rule=PathPrefix(`/api/imports`)"
       - "traefik.http.routers.engine.entrypoints=web"
       - "traefik.http.routers.engine.priority=45"
       - "traefik.http.services.engine.loadbalancer.server.port=8000"
@@ -235,7 +268,6 @@ services:
       - POSTGRES_DB=ent_dash_engine
       - POSTGRES_PORT=5432
       - SECRET_KEY=${SECRET_KEY}
-      - RECON_DATABASE_URI=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:5432/ent_dash_recon
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - MINIO_ENDPOINT=minio:9000
@@ -282,8 +314,8 @@ services:
       - MINIO_ROOT_USER=admin
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000" # MinIO S3 API — localhost only
+      - "127.0.0.1:9002:9001" # MinIO Console — localhost only
     volumes:
       - minio_data:/data
     restart: always
@@ -304,9 +336,9 @@ services:
       - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
       - --advertise-pandaproxy-addr internal://redpanda:8082,external://localhost:18082
     ports:
-      - "18082:18082"
-      - "19092:19092"
-      - "19644:9644"
+      - "127.0.0.1:19092:19092" # Kafka external — localhost only (internal traffic via Docker network)
+      - "127.0.0.1:18082:18082" # Pandaproxy external — localhost only
+      - "127.0.0.1:19644:9644"  # Admin API — localhost only
     volumes:
       - redpanda_data:/var/lib/redpanda/data
     restart: always
@@ -318,8 +350,7 @@ services:
       - redpanda
     environment:
       - KAFKA_BROKERS=redpanda:9092
-    ports:
-      - "8081:8080"
+    # Port direct dihapus — akses via Traefik di /monitoring/redpanda
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.redpanda-ui.rule=PathPrefix(`/monitoring/redpanda`)"
@@ -341,8 +372,7 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.external-url=/monitoring/prometheus'
       - '--web.route-prefix=/'
-    ports:
-      - "9090:9090"
+    # Port direct dihapus — akses via Traefik di /monitoring/prometheus
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.prometheus.rule=PathPrefix(`/monitoring/prometheus`)"
@@ -370,8 +400,7 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/monitoring/grafana
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
-    ports:
-      - "3001:3000"
+    # Port direct dihapus — akses via Traefik di /monitoring/grafana
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.grafana.rule=PathPrefix(`/monitoring/grafana`)"

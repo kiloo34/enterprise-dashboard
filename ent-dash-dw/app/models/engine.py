@@ -164,7 +164,6 @@ class EngineStsProseRptHis(Base):
     last_update_ftp = Column(DateTime, nullable=True)
 
 
-
 class EngineJobEntryLog(Base):
     __tablename__ = "engine_job_entry_log"
     __table_args__ = {"schema": "rekon"}

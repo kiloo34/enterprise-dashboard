@@ -15,9 +15,6 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "ent_dash_engine"
     POSTGRES_PORT: str = "5432"
 
-    # Recon DB — for writing rekon.* tables that the Recon service reads
-    RECON_DATABASE_URI: str = ""
-
     @property
     def sqlalchemy_database_uri(self) -> str:
         return (
@@ -25,15 +22,17 @@ class Settings(BaseSettings):
             f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
+    # DW DB (cbskonv) — for Celery worker to write rekon.* and TABLEAU_REPORT.*
+    DW_DATABASE_URI: str = ""
+
     @property
-    def recon_database_uri_sync(self) -> str:
-        """Sync psycopg2 URI for Celery worker to write to Recon DB."""
-        if self.RECON_DATABASE_URI:
-            return self.RECON_DATABASE_URI.replace("postgresql+asyncpg", "postgresql+psycopg2").replace("asyncpg", "psycopg2")
-        # Fallback: derive from engine DB settings, swap DB name
+    def dw_database_uri_sync(self) -> str:
+        """Sync psycopg2 URI for Celery worker to write to DW DB (cbskonv)."""
+        if self.DW_DATABASE_URI:
+            return self.DW_DATABASE_URI.replace("postgresql+asyncpg", "postgresql+psycopg2")
         return (
             f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/ent_dash_recon"
+            f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/cbskonv"
         )
 
     # JWT — same SECRET as IAM for token validation (stateless)

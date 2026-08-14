@@ -3,8 +3,7 @@ from sqlalchemy import text
 from app.db.session import engine
 from app.db.base import Base
 # Import all models so they are registered with Base.metadata
-from app.models.user import User, Position, OrganizationUnit
-from app.models.role_permission import Role, Permission, ModelHasRole, RoleHasPermission
+from app.models.rekon import RekonQrisAj, RekonQrisOnus, RekonQrisRintis  # noqa: F401
 
 async def init_db():
     # 1. Create schemas if not exist using a synchronous connection to ensure immediate commit

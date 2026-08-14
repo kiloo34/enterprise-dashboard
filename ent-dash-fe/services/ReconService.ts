@@ -55,7 +55,7 @@ export function useReconLogs(filters: {
     }).toString();
 
     const { data, error, isValidating, mutate } = useSWR<EngineLog[]>(
-        `api/engine/monitor/logs?${queryParams}`,
+        `api/dw/engine/monitor/logs?${queryParams}`,
         (url) => api<EngineLog[]>(url).then((res) => res || []),
         { refreshInterval: filters.liveTail ? 5000 : 0 }
     );
@@ -71,7 +71,7 @@ export function useReconLogs(filters: {
 
 export function useReconStats(liveTail: boolean = false) {
     const { data, error, mutate } = useSWR<ReconStats>(
-        "api/engine/monitor/stats",
+        "api/dw/engine/monitor/stats",
         (url) => api<ReconStats>(url).then((res) => res || {
             totalLogs: 0,
             errorTrend: 0,

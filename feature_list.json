@@ -441,6 +441,14 @@
       "evidence": "Evaluasi dilakukan berdasarkan graph analysis (248 nodes, 28.22% coupling ratio, 3 domain berbeda). Keputusan: DEFER — pemisahan tidak justified pada scale saat ini. Rekomendasi: organisasi ulang sebagai sub-packages (app/imports/, app/data_explorer/) dengan boundaries jelas tanpa memecah service. Dokumentasi di progress.md.",
       "source": "graphify-findings",
       "priority": "warn"
+    },
+    {
+      "id": "dw-001",
+      "name": "Data Warehouse: Service ent-dash-dw",
+      "description": "Buat microservice baru ent-dash-dw dengan database CBSKONV (schema: rekon, DATAWARE, TABLEAU_REPORT). Pindahkan 9 model engine_* dari ent-dash-engine. Buat EngineMonitoringService OOP class. Route monitoring dialihkan ke /api/dw/engine/... Frontend diupdate. Engine dibersihkan dari referensi engine_* dan rekon DB.",
+      "dependencies": ["eng-001", "eng-003", "rec-001"],
+      "status": "done",
+      "evidence": "Service ent-dash-dw UP di /api/dw. Database cbskonv terbuat dengan schema rekon, DATAWARE, TABLEAU_REPORT. 9 tabel engine_* terbuat di schema rekon. GET /api/dw/status → 200 OK. docker compose build engine recon_api dw sukses. python3 -m compileall bersih untuk semua service."
     }
   ]
 }

@@ -18,6 +18,19 @@ from app.core.security import get_password_hash                          # noqa:
 
 logger = logging.getLogger(__name__)
 
+def _run_alembic_migrations() -> None:
+    """Run pending Alembic migrations synchronously via subprocess to avoid event loop conflicts."""
+    import os
+    import subprocess
+    import sys
+    alembic_dir = os.path.join(os.path.dirname(__file__), "..", "..")
+    subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=os.path.abspath(alembic_dir),
+        check=True,
+    )
+
+
 async def init_db():
     logger.info("Initializing database schema and tables...")
     
@@ -31,7 +44,12 @@ async def init_db():
                 await conn.execute(text("CREATE SCHEMA IF NOT EXISTS app"))
                 logger.info("Schema 'app' verified/created.")
 
-            # 2. Create tables
+            # 2. Run Alembic migrations (handles schema drift safely)
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, _run_alembic_migrations)
+            logger.info("Alembic migrations applied successfully.")
+
+            # 3. Create any remaining tables not yet covered by migrations
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
                 logger.info("Database tables initialized successfully.")

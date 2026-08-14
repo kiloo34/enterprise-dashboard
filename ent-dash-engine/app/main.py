@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.exceptions import setup_exception_handlers
 from app.api.main import api_router
-from app.grpc_server import serve_grpc
 from app.db.init_db import init_db
 
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -22,18 +21,13 @@ logging.getLogger("uvicorn.access").disabled = True
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # T3: Init DB tables on startup
+    # Init DB tables on startup
     logger = logging.getLogger(__name__)
     try:
         await init_db()
     except Exception as e:
         logger.error(f"[Engine] Startup DB init failed: {e}")
-
-    # Start gRPC server
-    grpc_server = await serve_grpc()
     yield
-    # Stop gRPC server gracefully
-    await grpc_server.stop(grace=5.0)
 
 
 def create_app() -> FastAPI:

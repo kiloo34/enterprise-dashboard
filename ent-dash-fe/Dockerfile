@@ -9,7 +9,6 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json ./
-COPY package-lock.json ./
 RUN npm install --legacy-peer-deps
 
 # 2. Rebuild the source code only when needed

@@ -39,7 +39,7 @@ CHUNK_SIZE = 1000  # Balanced for memory vs. DB round-trips
 # ── Synchronous DB sessions for Celery worker ────────────────────────────────
 # asyncpg (async) is for FastAPI handlers. Celery uses psycopg2 (sync).
 
-# Engine DB — owns app.file_imports and non-rekon tables
+# Engine DB — owns app.file_imports
 _sync_engine = create_engine(
     settings.sqlalchemy_database_uri.replace("postgresql+asyncpg", "postgresql+psycopg2"),
     pool_size=2,
@@ -48,17 +48,17 @@ _sync_engine = create_engine(
 )
 SyncSessionLocal = sessionmaker(bind=_sync_engine, autocommit=False, autoflush=False)
 
-# Recon DB — owns rekon.* tables read by the Recon service dashboard
-_recon_engine = create_engine(
-    settings.recon_database_uri_sync,
+# DW DB (cbskonv) — owns rekon.*, DATAWARE.*, TABLEAU_REPORT.*
+_dw_engine = create_engine(
+    settings.dw_database_uri_sync,
     pool_size=2,
     max_overflow=2,
     pool_pre_ping=True,
 )
-ReconSessionLocal = sessionmaker(bind=_recon_engine, autocommit=False, autoflush=False)
+DWSessionLocal = sessionmaker(bind=_dw_engine, autocommit=False, autoflush=False)
 
-# Tables that belong to the Recon DB
-RECON_TABLES = frozenset({
+# Tables that belong to the DW DB (cbskonv)
+DW_TABLES = frozenset({
     "rekon.rekon_qris_aj",
     "rekon.rekon_qris_onus",
     "rekon.rekon_qris_rintis",
@@ -66,9 +66,11 @@ RECON_TABLES = frozenset({
 
 
 def _get_session_for_table(target_table: str):
-    """Return the correct SessionLocal based on the target table."""
-    if target_table in RECON_TABLES:
-        return ReconSessionLocal
+    """Return the correct SessionLocal based on the target table.
+    rekon.* and TABLEAU_REPORT.* go to DW DB (cbskonv); everything else to Engine DB.
+    """
+    if target_table in DW_TABLES or '"TABLEAU_REPORT"' in target_table:
+        return DWSessionLocal
     return SyncSessionLocal
 
 
@@ -117,16 +119,9 @@ def _process_csv_sync(import_id: str, object_name: str, target_table: str):
     """Synchronous CSV processing logic — safe to call from Celery worker."""
     # Normalize target_table schema prefix first (before routing decision)
     rekon_tables = ["rekon_qris_aj", "rekon_qris_onus", "rekon_qris_rintis"]
-    engine_tables = [
-        "engine_sts_load_data", "engine_sts_load_data_his",
-        "engine_sts_proses_rpt", "engine_sts_proses_rpt_his",
-        "engine_job_log", "engine_job_entry_log"
-    ]
     if "." not in target_table:
         if target_table in rekon_tables:
             target_table = f"rekon.{target_table}"
-        elif target_table in engine_tables:
-            target_table = f"app.{target_table}"
         elif target_table == "fact_kinerjaprc":
             target_table = '"TABLEAU_REPORT".fact_kinerjaprc'
     elif target_table.startswith("TABLEAU_REPORT."):

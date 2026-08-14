@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Ensure DB schema and tables exist (idempotent — safe to re-run)
+    from app.db.init_schema import init_db
+    await init_db()
+
     # Start Kafka Consumer in the background
     logger.info("[Recon] Starting background Kafka consumer...")
     consumer_task = asyncio.create_task(start_kafka_consumer())

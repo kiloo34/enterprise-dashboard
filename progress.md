@@ -1,5 +1,30 @@
 # Session Progress
 
+## Session: ent-dash-dw Refactor
+
+### Yang Dikerjakan
+- **[dw-001]** Dibuat microservice baru `ent-dash-dw` dengan database `cbskonv`
+- Schema `rekon`, `"DATAWARE"`, `"TABLEAU_REPORT"` terbuat di database `cbskonv`
+- 9 model `engine_*` dipindah dari `ent-dash-engine` ke `ent-dash-dw`
+- `EngineMonitoringService` OOP class dibuat di `ent-dash-dw`
+- Route monitoring pindah dari `/api/engine/monitor` → `/api/dw/engine/monitor`
+- Frontend `ReconService.ts` diupdate: path engine monitor → `/api/dw/engine/...`
+- Database lama `ent_dash_analytics`, `ent_dash_engine` (lama), `ent_dash_recon`, `ent-dash` di-drop
+- `ent-dash-engine` dibersihkan: hapus `models/engine.py`, `services/engine_monitoring.py`, `routes/engine.py`, `routes/data_explorer.py`
+- Engine Celery task `imports.py` diupdate: routing `rekon.*` dan `TABLEAU_REPORT.*` ke DB `cbskonv` (via `dw_database_uri_sync`)
+- `docker-compose.yml` diupdate: service `analytics` dihapus, `RECON_DATABASE_URI` dihapus dari engine/engine_worker, service `dw` ditambah
+
+### State Saat Ini
+- Database aktif: `ent_dash_iam`, `cbskonv`, `ent_dash_engine`
+- Service aktif: iam, recon_api, dw, engine, engine_worker, celery_worker, frontend, redis, db, minio, redpanda
+- `ent-dash-analytics` container masih running (image lama) tapi sudah dihapus dari docker-compose.yml — akan hilang setelah `docker compose down`
+
+### Known Issues
+- `ent_dash_analytics` container masih up (image lama, tidak ada di compose lagi) — tidak berpengaruh
+- `ent-dash-recon` masih punya `POSTGRES_DB=cbskonv` — rekon service sekarang berbagi DB `cbskonv` dengan DW service untuk tabel `rekon.*`
+
+---
+
 ## Completed Features (grf-001 to grf-007 — Graphify Findings)
 - **[grf-001]** Consolidated `CRUDBase` to `ent-dash-common/ent_dash_common/crud.py`. Deleted both `ent-dash-engine/app/crud/base.py` and `ent-dash-iam/app/crud/base.py`. All 7 CRUD files updated to `from ent_dash_common.crud import CRUDBase`.
 - **[grf-002]** Fixed 4 failing frontend test suites (AuthService, PageHeader, SettingsPages, AuthStateGuard). All 85/85 tests pass.
