@@ -89,8 +89,8 @@ def process_csv_import(self, import_id: str, object_name: str, target_table: str
                 {"tid": self.request.id, "id": import_id},
             )
             db.commit()
-    except Exception:
-        pass  # Non-critical — proceed even if task ID write fails
+    except Exception as e:
+        logger.warning(f"[Worker] Failed to update celery_task_id for import {import_id}: {e}")
 
     try:
         _process_csv_sync(import_id, object_name, target_table)
@@ -251,8 +251,8 @@ def _process_csv_sync(import_id: str, object_name: str, target_table: str):
                         {"err": {"message": str(e), "trace": err_trace}, "id": import_id}
                     )
                     engine_db.commit()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"[Worker] Failed to rollback/update error log for import {import_id}: {e}")
             raise
 
     # Write final status to Engine DB (outside the data-writing session)
@@ -275,8 +275,8 @@ def _process_csv_sync(import_id: str, object_name: str, target_table: str):
                 }
             )
             engine_db.commit()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"[Worker] Failed to update final status for import {import_id}: {e}")
 
 
 def _get_table_columns(db, schema: str | None, table_name: str) -> set[str]:

@@ -72,9 +72,17 @@ services:
       - db
     labels:
       - "traefik.enable=true"
+      - "traefik.http.middlewares.secure-headers.headers.sslredirect=false"
+      - "traefik.http.middlewares.secure-headers.headers.stsseconds=31536000"
+      - "traefik.http.middlewares.secure-headers.headers.browserxssfilter=true"
+      - "traefik.http.middlewares.secure-headers.headers.customframeoptionsvalue=SAMEORIGIN"
+      - "traefik.http.middlewares.auto-retry.retry.attempts=3"
+      - "traefik.http.middlewares.auto-retry.retry.initialinterval=100ms"
+
       - "traefik.http.routers.recon.rule=PathPrefix(`/api/recon`)"
       - "traefik.http.routers.recon.entrypoints=web"
       - "traefik.http.routers.recon.priority=40"
+      - "traefik.http.routers.recon.middlewares=secure-headers,auto-retry"
     restart: always
 
   dw:
@@ -104,6 +112,7 @@ services:
       - "traefik.http.routers.dw.rule=PathPrefix(`/api/dw`)"
       - "traefik.http.routers.dw.entrypoints=web"
       - "traefik.http.routers.dw.priority=42"
+      - "traefik.http.routers.dw.middlewares=secure-headers,auto-retry"
       - "traefik.http.services.dw.loadbalancer.server.port=8000"
     # gRPC port — used by analytics service (internal Docker network only)
     expose:
@@ -164,6 +173,7 @@ services:
       - "traefik.http.routers.iam.rule=PathPrefix(`/api/auth`) || PathPrefix(`/api/user`) || PathPrefix(`/api/users`) || PathPrefix(`/api/roles`) || PathPrefix(`/api/permissions`) || PathPrefix(`/api/positions`) || PathPrefix(`/api/organization-units`) || PathPrefix(`/api/admin`) || PathPrefix(`/api/system-config`) || PathPrefix(`/api/translations`)"
       - "traefik.http.routers.iam.entrypoints=web"
       - "traefik.http.routers.iam.priority=50"
+      - "traefik.http.routers.iam.middlewares=secure-headers,auto-retry"
       - "traefik.http.services.iam.loadbalancer.server.port=8000"
       # T1: Rate limit khusus login endpoint — 10 req/menit per IP (anti brute-force)
       - "traefik.http.routers.iam-login.rule=Path(`/api/auth/login`)"
@@ -206,6 +216,7 @@ services:
       - "traefik.http.routers.analytics.rule=PathPrefix(`/api/dashboard`)"
       - "traefik.http.routers.analytics.entrypoints=web"
       - "traefik.http.routers.analytics.priority=45"
+      - "traefik.http.routers.analytics.middlewares=secure-headers,auto-retry"
       - "traefik.http.services.analytics.loadbalancer.server.port=8000"
     restart: always
 
@@ -249,6 +260,7 @@ services:
       - "traefik.http.routers.engine.rule=PathPrefix(`/api/imports`)"
       - "traefik.http.routers.engine.entrypoints=web"
       - "traefik.http.routers.engine.priority=45"
+      - "traefik.http.routers.engine.middlewares=secure-headers,auto-retry"
       - "traefik.http.services.engine.loadbalancer.server.port=8000"
     restart: always
 
