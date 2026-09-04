@@ -1,21 +1,4 @@
-"use client";
-
-import React from "react";
-import {
-    LayoutDashboard,
-    FileText,
-    BarChart2,
-    Briefcase,
-    Users,
-    Settings,
-    HelpCircle,
-    Shield,
-    Database,
-    UploadCloud,
-    PanelLeftClose,
-    PanelLeftOpen,
-    Monitor,
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
 import clsx from "clsx";
 import { UserProfile } from "./UserProfile";
 import { SidebarHeader } from "./components/SidebarHeader";
@@ -24,6 +7,22 @@ import { SidebarNavItem } from "./components/SidebarNavItem";
 import { SidebarMenuDropdown } from "./components/SidebarMenuDropdown";
 import { useSidebarNavigation } from "./hooks/useSidebarNavigation";
 import Link from "next/link";
+import { LayoutDashboard, Briefcase, Settings, UploadCloud, BarChart2, Database, Activity, FileText, HelpCircle, UserMinus, TrendingDown, LucideIcon } from "lucide-react";
+import { useNavigationMenus, MenuItem } from "../../../services/IAMService";
+
+const IconMap: Record<string, LucideIcon> = {
+    LayoutDashboard,
+    Briefcase,
+    Settings,
+    UploadCloud,
+    BarChart2,
+    Database,
+    Activity,
+    FileText,
+    HelpCircle,
+    UserMinus,
+    TrendingDown,
+};
 
 interface SidebarProps {
     isOpen: boolean;
@@ -32,253 +31,239 @@ interface SidebarProps {
     setIsCollapsed: (collapsed: boolean) => void;
 }
 
-export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: SidebarProps) {
-    const {
-        t, pathname,
-        searchQuery, setSearchQuery, hasResults, showDireksi, showOperasi, showEngine,
-        isDashboardOpen, setIsDashboardOpen, isDireksiOpen, setIsDireksiOpen,
-        isOperasiOpen, setIsOperasiOpen,
-        isEngineOpen, setIsEngineOpen,
-        isDashboardActive, isDireksiActive, isOperasiActive,
-        isEngineActive,
-        isImportActive,
-        canViewDashboardKeuangan, canViewDashboardOperasi, canViewEngineMonitoring,
-        canViewKeuanganKinerja, canViewOperasiSummary,
-        canViewRekonQrisAj, canViewRekonQrisRintis, canViewRekonQrisOnUs,
-        isDireksiRole, isOperasiRole, isDireksiUnit, isOperasiUnit, isAdmin,
-        user,
-    } = useSidebarNavigation();
+// --- Extracted as a proper React component to comply with Rules of Hooks ---
+interface MenuDropdownItemProps {
+    item: MenuItem;
+    idx: number;
+    t: Record<string, string>;
+    pathname: string;
+    isCollapsed: boolean;
+}
 
-    // Icon-only mini nav items for collapsed mode
-    const collapsedNavItems = [
-        canViewDashboardKeuangan && { href: "/direksi/kinerja-keuangan", icon: LayoutDashboard, label: t.dashboard, active: isDashboardActive },
-        canViewDashboardOperasi && { href: "/divisi-operasi/summary", icon: Briefcase, label: t.divisiOperasi, active: isOperasiActive },
-        canViewEngineMonitoring && { href: "/rekon-engine/import", icon: UploadCloud, label: t.importData, active: isImportActive },
-        canViewEngineMonitoring && { href: "/rekon-engine", icon: Database, label: t.monitoring, active: isEngineActive },
-        canViewEngineMonitoring && { href: "/engine/data-explorer", icon: Database, label: "Data Explorer", active: pathname === "/engine/data-explorer" },
-        { href: "/settings", icon: Settings, label: t.settings, active: pathname.startsWith("/settings") },
-        { href: "#", icon: HelpCircle, label: t.support, active: false },
-    ].filter(Boolean) as { href: string; icon: React.ElementType; label: string; active: boolean }[];
+function MenuDropdownItem({ item, idx, t, pathname, isCollapsed }: MenuDropdownItemProps) {
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    const isActive = item.items?.some(subItem =>
+        pathname === subItem.href || (subItem.href !== '/' && pathname.startsWith(subItem.href || ''))
+    ) || false;
+
+    useEffect(() => {
+        if (isActive && !isCollapsed) {
+            setIsDropdownOpen(true);
+        }
+    }, [isActive, isCollapsed]);
+
+    const Icon = item.icon && IconMap[item.icon] ? IconMap[item.icon] : LayoutDashboard;
+    const translatedLabel = t[item.label as keyof typeof t] || item.label;
 
     return (
-        <aside
-            className={clsx(
-                "fixed left-0 top-0 h-screen flex flex-col z-50 transition-all duration-300 ease-in-out lg:translate-x-0 border-r backdrop-blur-md",
-                isCollapsed ? "w-16" : "w-64",
-                isOpen ? "translate-x-0" : "-translate-x-full"
-            )}
-            style={{ background: 'color-mix(in srgb, var(--card-bg) 90%, transparent)', borderColor: 'var(--card-border)' }}
+        <SidebarMenuDropdown
+            key={idx}
+            icon={Icon}
+            label={translatedLabel}
+            isOpen={isDropdownOpen}
+            onToggle={() => setIsDropdownOpen(!isDropdownOpen)}
+            active={isActive}
         >
-            {/* Header: logo + collapse toggle */}
-            {isCollapsed ? (
-                <div className="flex flex-col items-center justify-center h-20 px-2 border-b" style={{ borderColor: 'var(--card-border)' }}>
-                    <div className="bg-blue-600 p-1.5 rounded-lg text-white mb-1 shadow-sm">
-                        <BarChart2 className="w-5 h-5" />
+            {item.items?.map((subItem, subIdx) => {
+                const SubIcon = subItem.icon && IconMap[subItem.icon] ? IconMap[subItem.icon] : LayoutDashboard;
+                const subLabel = t[subItem.label as keyof typeof t] || subItem.label;
+                return (
+                    <SidebarNavItem
+                        key={subItem.href || subIdx}
+                        href={subItem.href || '#'}
+                        icon={SubIcon}
+                        label={subLabel}
+                        active={pathname === subItem.href || (subItem.href !== '/' && pathname.startsWith(subItem.href || ''))}
+                        isSubItem
+                    />
+                );
+            })}
+        </SidebarMenuDropdown>
+    );
+}
+// --------------------------------------------------------------------------
+
+export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: SidebarProps) {
+    const { t, pathname, searchQuery, setSearchQuery } = useSidebarNavigation();
+    const { menus, isLoading } = useNavigationMenus();
+
+    const renderMenuItem = (item: MenuItem, idx: number) => {
+        const Icon = item.icon && IconMap[item.icon] ? IconMap[item.icon] : LayoutDashboard;
+        const translatedLabel = t[item.label as keyof typeof t] || item.label;
+
+        if (item.type === 'item') {
+            return (
+                <SidebarNavItem
+                    key={item.href || idx}
+                    href={item.href || '#'}
+                    icon={Icon}
+                    label={translatedLabel}
+                    active={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href || ''))}
+                />
+            );
+        }
+
+        if (item.type === 'section') {
+            return (
+                <div key={idx} className="space-y-4 pt-4">
+                    <div className="px-3 flex items-center gap-2 mb-2">
+                        <div className="h-px flex-1" style={{ background: 'var(--card-border)' }} />
+                        <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--text-muted)' }}>{translatedLabel}</span>
+                        <div className="h-px flex-1" style={{ background: 'var(--card-border)' }} />
                     </div>
-                    <button
-                        onClick={() => setIsCollapsed(false)}
-                        className="flex p-1 rounded-md transition-colors hover:bg-[var(--card-bg-hover)] hover:text-blue-600"
-                        style={{ color: 'var(--text-muted)' }}
-                        title="Expand sidebar"
-                    >
-                        <PanelLeftOpen className="w-4 h-4" />
-                    </button>
+                    <div className="space-y-1">
+                        {item.items?.map((subItem, subIdx) => {
+                            const SubIcon = subItem.icon && IconMap[subItem.icon] ? IconMap[subItem.icon] : LayoutDashboard;
+                            const subLabel = t[subItem.label as keyof typeof t] || subItem.label;
+                            return (
+                                <SidebarNavItem
+                                    key={subItem.href || subIdx}
+                                    href={subItem.href || '#'}
+                                    icon={SubIcon}
+                                    label={subLabel}
+                                    active={pathname === subItem.href || (subItem.href !== '/' && pathname.startsWith(subItem.href || ''))}
+                                />
+                            );
+                        })}
+                    </div>
                 </div>
-            ) : (
-                <div className="border-b" style={{ borderColor: 'var(--card-border)' }}>
-                    <SidebarHeader setIsOpen={setIsOpen} setIsCollapsed={setIsCollapsed} />
-                </div>
+            );
+        }
+
+        if (item.type === 'dropdown') {
+            return (
+                <MenuDropdownItem
+                    key={idx}
+                    item={item}
+                    idx={idx}
+                    t={t}
+                    pathname={pathname}
+                    isCollapsed={isCollapsed}
+                />
+            );
+        }
+
+        return null;
+    };
+
+    return (
+        <>
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 lg:hidden z-40 transition-opacity"
+                    onClick={() => setIsOpen(false)}
+                />
             )}
 
-            {/* Collapsed: icon-only rail */}
-            {isCollapsed ? (
-                <nav className="flex-1 flex flex-col items-center gap-1 py-4 overflow-y-auto">
-                    {collapsedNavItems.map((item) => (
+            <aside
+                className={clsx(
+                    "fixed lg:static inset-y-0 left-0 z-50 flex flex-col h-screen",
+                    "transition-all duration-300 ease-in-out",
+                    isCollapsed ? "w-[72px]" : "w-72",
+                    "border-r shadow-sm",
+                    isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+                )}
+                style={{
+                    background: 'var(--card-bg)',
+                    borderColor: 'var(--card-border)',
+                }}
+            >
+                <SidebarHeader
+                    isCollapsed={isCollapsed}
+                    setIsCollapsed={setIsCollapsed}
+                    setIsOpen={setIsOpen}
+                />
+
+                {isCollapsed ? (
+                    <nav className="flex-1 px-3 py-6 space-y-4 overflow-y-auto overflow-x-hidden flex flex-col items-center">
+                        {menus.map((item, idx) => {
+                            const Icon = item.icon && IconMap[item.icon] ? IconMap[item.icon] : LayoutDashboard;
+                            let isActive = false;
+                            if (item.type === 'item') {
+                                isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href || ''));
+                            } else if (item.items) {
+                                isActive = item.items.some(sub => pathname === sub.href || (sub.href !== '/' && pathname.startsWith(sub.href || '')));
+                            }
+
+                            const href = item.type === 'item' ? item.href : (item.items?.[0]?.href || '#');
+
+                            return (
+                                <Link
+                                    key={idx}
+                                    href={href || '#'}
+                                    title={item.label}
+                                    className={clsx(
+                                        "flex items-center justify-center w-10 h-10 rounded-xl transition-colors",
+                                        isActive
+                                            ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                                            : "hover:bg-[var(--card-bg-hover)]"
+                                    )}
+                                    style={!isActive ? { color: 'var(--text-muted)' } : undefined}
+                                >
+                                    <Icon className="w-5 h-5" />
+                                </Link>
+                            );
+                        })}
+
                         <Link
-                            key={item.href}
-                            href={item.href}
-                            title={item.label}
+                            href="/settings"
+                            title={t.settings}
                             className={clsx(
-                                "flex items-center justify-center w-10 h-10 rounded-xl transition-colors",
-                                item.active
+                                "flex items-center justify-center w-10 h-10 rounded-xl transition-colors mt-auto",
+                                pathname.startsWith("/settings")
                                     ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
                                     : "hover:bg-[var(--card-bg-hover)]"
                             )}
-                            style={!item.active ? { color: 'var(--text-muted)' } : undefined}
+                            style={!pathname.startsWith("/settings") ? { color: 'var(--text-muted)' } : undefined}
                         >
-                            <item.icon className="w-5 h-5" />
+                            <Settings className="w-5 h-5" />
                         </Link>
-                    ))}
-                </nav>
-            ) : (
-                <>
-                    <SidebarSearch value={searchQuery} onChange={setSearchQuery} />
+                    </nav>
+                ) : (
+                    <>
+                        <SidebarSearch value={searchQuery} onChange={setSearchQuery} />
 
-                    <div className="flex-1 px-4 py-2 space-y-4 overflow-y-auto">
-                        {!hasResults && (
-                            <div className="py-8 text-center px-4">
-                                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>{t.noResults}</p>
-                            </div>
-                        )}
+                        <div className="flex-1 px-4 py-2 space-y-4 overflow-y-auto">
 
-                        {(canViewDashboardKeuangan || canViewDashboardOperasi) && (
-                            hasResults && (
-                                <SidebarMenuDropdown
-                                    isOpen={isDashboardOpen}
-                                    onToggle={() => setIsDashboardOpen(!isDashboardOpen)}
-                                    icon={LayoutDashboard}
-                                    label={t.dashboard}
-                                    active={isDashboardActive}
-                                >
-                                    {/* Direksi Menu: Flatten if Direksi Role/Unit or if Admin in Direksi Unit */}
-                                    {canViewDashboardKeuangan && (
-                                        (isDireksiRole || (isAdmin && isDireksiUnit)) ? (
-                                            canViewKeuanganKinerja && (
-                                                <SidebarNavItem
-                                                    href="/direksi/kinerja-keuangan"
-                                                    icon={BarChart2}
-                                                    label={t.direkturUtama}
-                                                    active={pathname === "/direksi/kinerja-keuangan" || pathname === "/"}
-                                                    isSubItem
-                                                />
-                                            )
-                                        ) : (
-                                            <SidebarMenuDropdown
-                                                isOpen={isDireksiOpen}
-                                                onToggle={() => setIsDireksiOpen(!isDireksiOpen)}
-                                                icon={Users}
-                                                label={t.direksi}
-                                                show={showDireksi}
-                                                isLevel2
-                                                active={isDireksiActive}
-                                            >
-                                                {canViewKeuanganKinerja && (
-                                                    <SidebarNavItem
-                                                        href="/direksi/kinerja-keuangan"
-                                                        icon={BarChart2}
-                                                        label={t.direkturUtama}
-                                                        active={pathname === "/direksi/kinerja-keuangan" || pathname === "/"}
-                                                        isSubItem
-                                                    />
-                                                )}
-                                            </SidebarMenuDropdown>
-                                        )
-                                    )}
+                            {isLoading ? (
+                                <div className="py-8 text-center px-4">
+                                    <p className="text-sm italic animate-pulse" style={{ color: 'var(--text-muted)' }}>Loading menu...</p>
+                                </div>
+                            ) : menus.length === 0 ? (
+                                <div className="py-8 text-center px-4">
+                                    <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>{t.noResults || "No menus available"}</p>
+                                </div>
+                            ) : (
+                                menus.map((item, idx) => renderMenuItem(item, idx))
+                            )}
 
-                                    {/* Operasi Menu: Flatten if Operasi Role/Unit or if Admin in Operasi Unit */}
-                                    {canViewDashboardOperasi && (
-                                        (isOperasiRole || (isAdmin && isOperasiUnit)) ? (
-                                            <>
-                                                {canViewOperasiSummary && (
-                                                    <SidebarNavItem
-                                                        href="/divisi-operasi/summary"
-                                                        icon={BarChart2}
-                                                        label={t.summary}
-                                                        active={pathname.startsWith("/divisi-operasi/summary")}
-                                                        isSubItem
-                                                    />
-                                                )}
-                                                {canViewRekonQrisAj && <SidebarNavItem href="/divisi-operasi/rekon-qris-aj" icon={FileText} label={t.rekonQris} active={pathname.startsWith("/divisi-operasi/rekon-qris-aj")} isSubItem />}
-                                                {canViewRekonQrisRintis && <SidebarNavItem href="/divisi-operasi/rekon-qris-rintis" icon={FileText} label={t.rekonQrisRintis} active={pathname.startsWith("/divisi-operasi/rekon-qris-rintis")} isSubItem />}
-                                                {canViewRekonQrisOnUs && <SidebarNavItem href="/divisi-operasi/rekon-qris-on-us" icon={FileText} label={t.rekonQrisOnus} active={pathname.startsWith("/divisi-operasi/rekon-qris-on-us")} isSubItem />}
-                                            </>
-                                        ) : (
-                                            <SidebarMenuDropdown
-                                                isOpen={isOperasiOpen}
-                                                onToggle={() => setIsOperasiOpen(!isOperasiOpen)}
-                                                icon={Briefcase}
-                                                label={t.divisiOperasi}
-                                                show={showOperasi}
-                                                isLevel2
-                                                active={isOperasiActive}
-                                            >
-                                                {canViewOperasiSummary && (
-                                                    <SidebarNavItem
-                                                        href="/divisi-operasi/summary"
-                                                        icon={BarChart2}
-                                                        label={t.summary}
-                                                        active={pathname.startsWith("/divisi-operasi/summary")}
-                                                        isSubItem
-                                                    />
-                                                )}
-                                                {canViewRekonQrisAj && <SidebarNavItem href="/divisi-operasi/rekon-qris-aj" icon={FileText} label={t.rekonQris} active={pathname.startsWith("/divisi-operasi/rekon-qris-aj")} isSubItem />}
-                                                {canViewRekonQrisRintis && <SidebarNavItem href="/divisi-operasi/rekon-qris-rintis" icon={FileText} label={t.rekonQrisRintis} active={pathname.startsWith("/divisi-operasi/rekon-qris-rintis")} isSubItem />}
-                                                {canViewRekonQrisOnUs && <SidebarNavItem href="/divisi-operasi/rekon-qris-on-us" icon={FileText} label={t.rekonQrisOnus} active={pathname.startsWith("/divisi-operasi/rekon-qris-on-us")} isSubItem />}
-                                            </SidebarMenuDropdown>
-                                        )
-                                    )}
-                                </SidebarMenuDropdown>
-                            )
-                        )}
+                            <div className="space-y-4 pt-4">
+                                <div className="px-3 flex items-center gap-2 mb-2">
+                                    <div className="h-px flex-1" style={{ background: 'var(--card-border)' }} />
+                                    <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--text-muted)' }}>System</span>
+                                    <div className="h-px flex-1" style={{ background: 'var(--card-border)' }} />
+                                </div>
 
-                        {canViewEngineMonitoring && showEngine && (
-                            <SidebarMenuDropdown
-                                icon={Settings}
-                                label={t.engine}
-                                isOpen={isEngineOpen}
-                                onToggle={() => setIsEngineOpen(!isEngineOpen)}
-                                active={isEngineActive || isImportActive}
-                            >
                                 <SidebarNavItem
-                                    href="/rekon-engine/import"
-                                    icon={UploadCloud}
-                                    label={t.importData}
-                                    active={pathname === "/rekon-engine/import"}
-                                    isSubItem
+                                    href="/settings"
+                                    icon={Settings}
+                                    label={t.settings}
+                                    active={pathname.startsWith("/settings")}
                                 />
                                 <SidebarNavItem
-                                    href="/rekon-engine"
-                                    icon={BarChart2}
-                                    label={t.monitoring}
-                                    active={pathname === "/rekon-engine"}
-                                    isSubItem
+                                    href="#"
+                                    icon={HelpCircle}
+                                    label={t.support}
+                                    active={false}
                                 />
-                                <SidebarNavItem
-                                    href="/engine/data-explorer"
-                                    icon={Database}
-                                    label="Data Explorer"
-                                    active={pathname === "/engine/data-explorer"}
-                                    isSubItem
-                                />
-                            </SidebarMenuDropdown>
-                        )}
-
-                        <div className="space-y-4 pt-4">
-                            <div className="px-3 flex items-center gap-2 mb-2">
-                                <div className="h-px flex-1" style={{ background: 'var(--card-border)' }} />
-                                <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--text-muted)' }}>System</span>
-                                <div className="h-px flex-1" style={{ background: 'var(--card-border)' }} />
-                            </div>
-
-                            <div className="space-y-1">
-                                {isAdmin && (
-                                    <SidebarNavItem
-                                        href="/admin/dashboard"
-                                        icon={Shield}
-                                        label="Admin Dashboard"
-                                        active={pathname === "/admin/dashboard"}
-                                    />
-                                )}
-                                {/* System Monitoring — super-admin only */}
-                                {user?.role === "super-admin" && (
-                                    <SidebarNavItem
-                                        href="/admin/monitoring"
-                                        icon={Monitor}
-                                        label="System Monitoring"
-                                        active={pathname === "/admin/monitoring"}
-                                    />
-                                )}
-                                <SidebarNavItem href="/settings" icon={Settings} label={t.settings} active={pathname.startsWith("/settings")} />
-                                <SidebarNavItem href="#" icon={HelpCircle} label={t.support} />
                             </div>
                         </div>
-                    </div>
+                    </>
+                )}
 
-                    <UserProfile translations={t} />
-                </>
-            )}
-        </aside>
+                <UserProfile translations={t} />
+            </aside>
+        </>
     );
 }
-
-

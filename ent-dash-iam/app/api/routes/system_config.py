@@ -55,6 +55,25 @@ async def list_configs(
     return [_serialise(c) for c in configs]
 
 
+
+@router.get("/public/{key:path}", response_model=SystemConfigResponse)
+async def get_config_public(
+    key: str,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Return a single configuration entry by key without auth, only if not sensitive."""
+    cfg = await crud.get_by_key(db, key=key)
+    if not cfg:
+        raise NotFoundException(message=f"Config key '{key}' not found.", code="CONFIG_NOT_FOUND")
+    if cfg.is_sensitive:
+        raise AppException(
+            code="FORBIDDEN",
+            message="This configuration key is sensitive and requires authentication.",
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+    return _serialise(cfg)
+
+
 @router.get("/{key:path}", response_model=SystemConfigResponse)
 async def get_config(
     key: str,

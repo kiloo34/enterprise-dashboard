@@ -161,6 +161,9 @@ async def seed_data(db: AsyncSession):
     for p in mapping_user_perms:
         permissions_with_metadata.append({"name": p, "owner": "Administrator", "description": "Mapping user ke data/fitur spesifik"})
 
+    # Use Case Permissions
+    permissions_with_metadata.append({"name": "view-use-case-churn", "owner": "Super Admin", "description": "Akses model prediktif Churn Retail"})
+
     all_perms = [p["name"] for p in permissions_with_metadata]
 
     stored_perms = {}
@@ -279,6 +282,30 @@ async def seed_system_configs(db: AsyncSession) -> None:
     from app.models.system_config import SystemConfig, ConfigValueType
 
     default_configs = [
+        {
+            "key": "frontend.forms.churn_retail",
+            "value": '[{"name": "cif", "label": "CIF", "type": "text", "defaultValue": "5<%&C3"}, {"name": "no_rekening", "label": "Account Number", "type": "text", "defaultValue": "5<&&G"}, {"name": "umur", "label": "Age (Umur)", "type": "number", "defaultValue": 28.0}, {"name": "n_trx_12m", "label": "Trx Count (12m)", "type": "number", "defaultValue": 35}, {"name": "account_age_days_at_obs", "label": "Account Age (Days)", "type": "number", "defaultValue": 1085}, {"name": "avg_saldo_12m", "label": "Avg Saldo (12m)", "type": "number", "defaultValue": 13.05}, {"name": "observation_date", "type": "hidden", "defaultValue": "2023-12-31"}, {"name": "n_ci_any_12m", "type": "hidden", "defaultValue": 21}, {"name": "n_ci_debit_12m", "type": "hidden", "defaultValue": 14}, {"name": "n_ci_credit_12m", "type": "hidden", "defaultValue": 7}, {"name": "n_debit_12m", "type": "hidden", "defaultValue": 28}, {"name": "n_credit_12m", "type": "hidden", "defaultValue": 7}, {"name": "months_active_12m", "type": "hidden", "defaultValue": 12}, {"name": "total_debit_amt_12m", "type": "hidden", "defaultValue": 16.13}, {"name": "total_credit_amt_12m", "type": "hidden", "defaultValue": 16.13}, {"name": "avg_debit_amt_12m", "type": "hidden", "defaultValue": 12.8}, {"name": "max_debit_amt_12m", "type": "hidden", "defaultValue": 14.6}, {"name": "avg_credit_amt_12m", "type": "hidden", "defaultValue": 14.1}, {"name": "max_credit_amt_12m", "type": "hidden", "defaultValue": 14.6}, {"name": "total_ci_debit_amt_12m", "type": "hidden", "defaultValue": 16.12}, {"name": "days_since_last_ci_any", "type": "hidden", "defaultValue": 87}, {"name": "days_since_last_ci_debit", "type": "hidden", "defaultValue": 87}, {"name": "days_since_last_ci_credit", "type": "hidden", "defaultValue": 87}, {"name": "n_ci_any_last_30d", "type": "hidden", "defaultValue": 0}, {"name": "n_ci_debit_last_30d", "type": "hidden", "defaultValue": 0}, {"name": "amt_debit_last_30d", "type": "hidden", "defaultValue": 5000.0}, {"name": "n_ci_any_last_60d", "type": "hidden", "defaultValue": 0}, {"name": "amt_debit_last_60d", "type": "hidden", "defaultValue": 10000.0}, {"name": "n_ci_any_last_90d", "type": "hidden", "defaultValue": 2}, {"name": "amt_debit_last_90d", "type": "hidden", "defaultValue": 1865000.0}, {"name": "n_ci_any_last_180d", "type": "hidden", "defaultValue": 4}, {"name": "amt_debit_last_180d", "type": "hidden", "defaultValue": 3880000.0}, {"name": "n_mb_12m", "type": "hidden", "defaultValue": 0}, {"name": "n_non_mb_12m", "type": "hidden", "defaultValue": 35}, {"name": "pct_mb_12m", "type": "hidden", "defaultValue": 0.0}, {"name": "mb_debit_amt_12m", "type": "hidden", "defaultValue": 0.0}, {"name": "n_unique_user_trx", "type": "hidden", "defaultValue": 8}, {"name": "n_unique_keterangan_12m", "type": "hidden", "defaultValue": 7}, {"name": "min_saldo_observed_12m", "type": "hidden", "defaultValue": 10.28}, {"name": "max_saldo_12m", "type": "hidden", "defaultValue": 14.63}, {"name": "saldo_volatility_12m", "type": "hidden", "defaultValue": 663272.95}, {"name": "days_since_first_trx_in_window", "type": "hidden", "defaultValue": 337}, {"name": "saldo_at_obs", "type": "hidden", "defaultValue": 49205.28}, {"name": "min_saldo", "type": "hidden", "defaultValue": 10.81}, {"name": "saldo_gap_to_min", "type": "hidden", "defaultValue": -794.72}, {"name": "saldo_minus_min_pct", "type": "hidden", "defaultValue": -0.015}, {"name": "is_above_min_saldo", "type": "hidden", "defaultValue": 0}, {"name": "jenis_rekening", "type": "hidden", "defaultValue": "TABUNGAN SIKLUS"}, {"name": "kode_rekening", "type": "hidden", "defaultValue": "T02"}, {"name": "cabang", "type": "hidden", "defaultValue": 74}, {"name": "name_cabang", "type": "hidden", "defaultValue": "CAPEM UNTAG"}, {"name": "customer_type", "type": "hidden", "defaultValue": "RETAIL"}, {"name": "jenis", "type": "hidden", "defaultValue": "KONVEN"}, {"name": "split", "type": "hidden", "defaultValue": "test"}]',
+            "value_type": ConfigValueType.json,
+            "description": "Skema form UI JSON untuk laman Churn Retail Model.",
+            "is_editable": True,
+            "is_sensitive": False,
+        },
+        {
+            "key": "analytics.ml_models.churn_retail.path",
+            "value": "./app/ml_models/churn_retail_model",
+            "value_type": ConfigValueType.string,
+            "description": "Path relatif/absolut direktori model Dataiku untuk fitur Churn Retail.",
+            "is_editable": True,
+            "is_sensitive": False,
+        },
+        {
+            "key": "frontend.navigation.menus",
+            "value": '[{"type": "item", "href": "/direksi/kinerja-keuangan", "icon": "BarChart2", "label": "t.direkturUtama", "permission_required": ["view-dashboard-keuangan", "dashboard-keuangan-all"]}, {"type": "dropdown", "icon": "Briefcase", "label": "t.divisiOperasi", "permission_required": ["view-dashboard-operasi-rekon-qris-aj", "view-dashboard-operasi-rekon-qris-prima"], "items": [{"type": "item", "href": "/divisi-operasi/summary", "icon": "BarChart2", "label": "t.summary", "permission_required": ["view-dashboard-operasi-rekon-qris-aj"]}, {"type": "item", "href": "/divisi-operasi/rekon-qris-aj", "icon": "FileText", "label": "t.rekonQris", "permission_required": ["view-dashboard-operasi-rekon-qris-aj"]}, {"type": "item", "href": "/divisi-operasi/rekon-qris-rintis", "icon": "FileText", "label": "t.rekonQrisRintis", "permission_required": ["view-dashboard-operasi-rekon-qris-prima"]}, {"type": "item", "href": "/divisi-operasi/rekon-qris-on-us", "icon": "FileText", "label": "t.rekonQrisOnus", "permission_required": ["view-dashboard-operasi-rekon-qris-onus"]}]}, {"type": "dropdown", "icon": "Settings", "label": "t.engine", "permission_required": ["manage-job-log", "view-job-log"], "items": [{"type": "item", "href": "/rekon-engine/import", "icon": "UploadCloud", "label": "t.importData", "permission_required": ["manage-job-log"]}, {"type": "item", "href": "/rekon-engine", "icon": "BarChart2", "label": "t.monitoring", "permission_required": ["view-job-log"]}, {"type": "item", "href": "/engine/data-explorer", "icon": "Database", "label": "Data Explorer", "permission_required": ["view-job-log"]}]}, {"type": "section", "label": "Use Case", "permission_required": ["view-use-case-churn"], "items": [{"type": "item", "href": "/use-case/churn-retail-model", "icon": "Activity", "label": "Churn Retail Model", "permission_required": ["view-use-case-churn"]}]}]',
+            "value_type": ConfigValueType.json,
+            "description": "Struktur JSON untuk navigasi Sidebar Frontend secara dinamis.",
+            "is_editable": True,
+            "is_sensitive": False,
+        },
         # ── Security / Auth ──────────────────────────────────────────────────
         {
             "key": "auth.access_token_expire_minutes",
@@ -882,3 +909,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+

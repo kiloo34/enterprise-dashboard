@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.routes import auth, users, rbac, user_management, admin, system_config, positions, org_units, audit, compliance, translations
+from app.api.routes import auth, users, rbac, user_management, admin, system_config, positions, org_units, audit, compliance, translations, navigation
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -13,3 +13,4 @@ api_router.include_router(system_config.router, prefix="/system-config", tags=["
 api_router.include_router(translations.router, prefix="/translations", tags=["translations"])
 api_router.include_router(audit.router, tags=["audit"])
 api_router.include_router(compliance.router, prefix="/compliance", tags=["compliance"])
+api_router.include_router(navigation.router, prefix="/navigation", tags=["navigation"])

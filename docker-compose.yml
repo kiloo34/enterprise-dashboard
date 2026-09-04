@@ -170,7 +170,7 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.iam.rule=PathPrefix(`/api/auth`) || PathPrefix(`/api/user`) || PathPrefix(`/api/users`) || PathPrefix(`/api/roles`) || PathPrefix(`/api/permissions`) || PathPrefix(`/api/positions`) || PathPrefix(`/api/organization-units`) || PathPrefix(`/api/admin`) || PathPrefix(`/api/system-config`) || PathPrefix(`/api/translations`)"
+      - "traefik.http.routers.iam.rule=PathPrefix(`/api/auth`) || PathPrefix(`/api/user`) || PathPrefix(`/api/users`) || PathPrefix(`/api/roles`) || PathPrefix(`/api/permissions`) || PathPrefix(`/api/positions`) || PathPrefix(`/api/organization-units`) || PathPrefix(`/api/admin`) || PathPrefix(`/api/system-config`) || PathPrefix(`/api/translations`) || PathPrefix(`/api/navigation`)"
       - "traefik.http.routers.iam.entrypoints=web"
       - "traefik.http.routers.iam.priority=50"
       - "traefik.http.routers.iam.middlewares=secure-headers,auto-retry"
