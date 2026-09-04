@@ -40,6 +40,11 @@ interface MenuDropdownItemProps {
     isCollapsed: boolean;
 }
 
+const getTranslatedLabel = (label: string, t: Record<string, string>) => {
+    const key = label.startsWith('t.') ? label.slice(2) : label;
+    return t[key as keyof typeof t] || label;
+};
+
 function MenuDropdownItem({ item, idx, t, pathname, isCollapsed }: MenuDropdownItemProps) {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -54,7 +59,7 @@ function MenuDropdownItem({ item, idx, t, pathname, isCollapsed }: MenuDropdownI
     }, [isActive, isCollapsed]);
 
     const Icon = item.icon && IconMap[item.icon] ? IconMap[item.icon] : LayoutDashboard;
-    const translatedLabel = t[item.label as keyof typeof t] || item.label;
+    const translatedLabel = getTranslatedLabel(item.label, t);
 
     return (
         <SidebarMenuDropdown
@@ -67,7 +72,7 @@ function MenuDropdownItem({ item, idx, t, pathname, isCollapsed }: MenuDropdownI
         >
             {item.items?.map((subItem, subIdx) => {
                 const SubIcon = subItem.icon && IconMap[subItem.icon] ? IconMap[subItem.icon] : LayoutDashboard;
-                const subLabel = t[subItem.label as keyof typeof t] || subItem.label;
+                const subLabel = getTranslatedLabel(subItem.label, t);
                 return (
                     <SidebarNavItem
                         key={subItem.href || subIdx}
@@ -90,7 +95,7 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
 
     const renderMenuItem = (item: MenuItem, idx: number) => {
         const Icon = item.icon && IconMap[item.icon] ? IconMap[item.icon] : LayoutDashboard;
-        const translatedLabel = t[item.label as keyof typeof t] || item.label;
+        const translatedLabel = getTranslatedLabel(item.label, t);
 
         if (item.type === 'item') {
             return (
@@ -115,7 +120,7 @@ export function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }: Side
                     <div className="space-y-1">
                         {item.items?.map((subItem, subIdx) => {
                             const SubIcon = subItem.icon && IconMap[subItem.icon] ? IconMap[subItem.icon] : LayoutDashboard;
-                            const subLabel = t[subItem.label as keyof typeof t] || subItem.label;
+                            const subLabel = getTranslatedLabel(subItem.label, t);
                             return (
                                 <SidebarNavItem
                                     key={subItem.href || subIdx}
