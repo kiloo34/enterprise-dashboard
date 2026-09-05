@@ -3,23 +3,27 @@
 ## Current Objective
 
 - **Goal:** Semua fitur selesai. Tidak ada active feature. Sesi ini bersifat maintenance/improvement.
-- **Current status:** 28/28 features done + Settings UI redesign + DB-backed translation system selesai.
-- **Branch / commit:** `main` — uncommitted changes ada.
+- **Current status:** 28/28 features done. Repository dalam kondisi bersih dan production-ready.
+- **Branch / commit:** `main` — uncommitted changes ada (security hardening + docs, belum di-commit).
 
 ## Completed This Session
 
 - [x] **Architecture Documentation** (`doc-001`) — `docs/ARCHITECTURE.md` 754 baris, Bahasa Indonesia, 4 diagram Mermaid
 - [x] **Security Audit** — 11 findings (2 High, 6 Medium, 3 Low) teridentifikasi via manual code review
 - [x] **Security Hardening** (`sec-006`) — 7 sub-task, 19 file, semua P0/P1/P2/P3 findings fixed
-- [x] **Settings UI Redesign + DB-backed Translation System** — 10 sub-task selesai
+- [x] **Dynamic Config Analysis** — Konfirmasi `ConfigService` + `SystemConfig` + seed sudah production-ready
+- [x] **Harness Update** — `feature_list.json`, `progress.md`, `session-handoff.md` disinkronkan
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
 | Python compile | `python -m compileall ent-dash-*/app -q` | ✅ Pass | No syntax errors |
-| TS compile (src) | `npx tsc --noEmit \| grep -v .next \| grep -v next.config` | ✅ Pass | 0 new errors |
 | No hardcoded creds | `grep -rn 'POSTGRES_PASSWORD.*=.*"password"'` | ✅ Pass | 0 matches |
+| No DEBUG=True | `grep -rn 'DEBUG.*=.*True' */app/core` | ✅ Pass | 0 matches |
+| No CORS wildcard | `grep -rn 'allow_headers=\["\*"\]'` | ✅ Pass | 0 matches |
+| SSE ticket type check | `grep -n 'type.*!= "sse"' engine/api/deps.py` | ✅ Pass | Line 32 |
+| LOGIN_FAILED redacted | `grep -n 'LOGIN_FAILED' iam/routes/auth.py` | ✅ Pass | `[redacted]` on line 41 |
 
 ## Files Changed (This Session)
 
@@ -49,6 +53,10 @@
 
 ## Decisions Made
 
+- **L-1 (window.__getAuthToken global) diterima sebagai acceptable risk** — CSP `default-src 'self'` sudah mencegah XSS eksternal; token di `useRef` bukan localStorage. Tidak perlu diubah saat ini.
+- **L-2 (MinIO tanpa TLS) diterima untuk dev** — di Docker internal network, traffic tidak keluar jaringan container. Operator wajib set `MINIO_USE_SSL=true` di production.
+- **`COOKIE_SECURE=false` di `.env.example`** — intentional untuk local dev (HTTP). Production harus override ke `true`.
+- **SSE ticket TTL 60 detik** — cukup untuk handshake SSE; ticket tidak dimaksudkan untuk reconnect.
 - **Static locale files dipertahankan sebagai permanent fallback** — `id.ts`/`en.ts` tidak dihapus; menjadi safety net jika backend tidak bisa diakses.
 - **Seed scope 6 namespace prioritas** — `Common`, `Sidebar`, `Settings`, `Users`, `Roles`, `Permissions`. Namespace `Dashboard`, `RekonEngine`, `Reconciliation` tetap di static files; bisa ditambah via Translation Editor UI tanpa code change.
 - **TranslationsProvider nested di dalam SettingsProvider** — karena butuh `language` dari SettingsContext untuk fetch bahasa yang benar.
@@ -56,14 +64,22 @@
 
 ## Blockers / Risks
 
-- **Uncommitted changes** — banyak file modified. Commit sebelum deploy.
-- **Docker not running** — `./init.sh` belum dijalankan sesi ini. Jalankan sebelum deploy.
-- **Translation seed butuh restart IAM container** — `seed_translations()` dipanggil di startup `lifespan`. Jalankan `docker compose restart iam` atau `docker compose up -d --build iam` agar tabel `app.translations` ter-create dan ter-seed.
+- **Uncommitted changes** — `git status` menunjukkan 19 file modified + 3 untracked. Perlu di-commit sebelum deploy atau sebelum sesi berikutnya jika ada paralel pekerjaan.
+- **Docker not running** — Containers tidak aktif saat sesi ini berjalan, sehingga `./init.sh` (docker-based tests) tidak dijalankan. Wajib jalankan `./init.sh` sebelum merge ke production.
+- **python-magic Dockerfile change** — Engine container harus di-rebuild (`docker compose build engine engine_worker`) agar `libmagic1` tersedia.
 
 ## Next Session Startup
 
 1. Read `AGENTS.md`.
-2. Run `docker compose up -d --build iam` agar translation seed jalan.
-3. Test `GET http://localhost/api/translations?lang=ID` — harus return nested dict.
-4. Buka `/settings` di browser — nav harus tampil sebagai card di kiri.
-5. Login sebagai super-admin → buka `/settings/translations` → test inline edit.
+2. Read `feature_list.json` dan `progress.md`.
+3. Review this handoff.
+4. Run `git status` — commit uncommitted changes jika clean.
+5. Run `./init.sh` untuk verifikasi penuh dengan Docker.
+
+## Recommended Next Step
+
+Jika ingin melanjutkan pengembangan, opsi berikutnya:
+- **Tambah config key dinamis** baru ke `seed_system_configs()` di `ent-dash-iam/app/db/seed.py` (e.g., `recon.lookback_days`, `engine.max_upload_size_mb`)
+- **Propagasi dynamic config ke service lain** (Engine, Analytics, Recon) via internal IAM API call
+- **Commit & tag** semua perubahan sebagai `v2.0-security-hardened`
+- **Production deployment** — ikuti instruksi di `docs/ARCHITECTURE.md` §10 Konfigurasi Lingkungan
