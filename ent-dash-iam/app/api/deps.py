@@ -35,9 +35,14 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
 
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise credentials_exception
+
     result = await db.execute(
         select(User)
-        .where(User.id == int(user_id))
+        .where(User.id == user_id_int)
         .options(
             selectinload(User.roles).selectinload(Role.permissions),
             selectinload(User.position),
@@ -100,9 +105,14 @@ async def get_current_user_from_refresh_token(
     except JWTError:
         raise credentials_exception
 
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise credentials_exception
+
     result = await db.execute(
         select(User)
-        .where(User.id == int(user_id))
+        .where(User.id == user_id_int)
         .options(
             selectinload(User.roles).selectinload(Role.permissions),
             selectinload(User.position),

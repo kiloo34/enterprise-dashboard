@@ -37,3 +37,14 @@ def create_refresh_token(
         )
     to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def create_sse_ticket(subject: Union[str, Any]) -> str:
+    """
+    Issue a short-lived, single-use SSE ticket (TTL 60 seconds).
+    Used exclusively for the SSE /notifications endpoint so that
+    the main access token never appears in URL query strings / server logs.
+    """
+    expire = datetime.utcnow() + timedelta(seconds=60)
+    to_encode = {"exp": expire, "sub": str(subject), "type": "sse"}
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
