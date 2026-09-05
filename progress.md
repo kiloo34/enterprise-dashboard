@@ -2,12 +2,28 @@
 
 ## Current State
 
-**Last Updated:** 2026-06-22 19:35
-**Active Feature:** None (All features completed)
+**Last Updated:** 2026-06-24
+**Active Feature:** None (All 28 features completed)
 
 ## Status
 
 ### What's Done
+
+- [x] **2026-06-24: Security Hardening + Architecture Documentation (sec-006, doc-001):**
+  - Ran full manual security code review — 11 findings (2 High, 6 Medium, 3 Low).
+  - Fixed H-1: Removed all hardcoded default credentials from 4 service configs; DEBUG default → False.
+  - Fixed H-2: SSE short-lived ticket system (TTL 60s, `type="sse"`) — JWT utama tidak pernah masuk URL query string / server logs. Endpoint `POST /api/auth/sse-ticket` ditambah di IAM; Engine `deps.py` hanya menerima `type="sse"`; frontend `useNotifications.ts` request ticket dulu.
+  - Fixed M-1: `COOKIE_SECURE` env var terpisah dari `DEBUG` — refresh token cookie selalu secure by default.
+  - Fixed M-2: Recon Celery tasks: `SELECT *` → `WHERE transaction_date >= :since LIMIT :max_rows` (configurable via `RECON_LOOKBACK_DAYS` dan `RECON_MAX_ROWS`).
+  - Fixed M-3: CORS `allow_headers=["*"]` → whitelist eksplisit di 4 service.
+  - Fixed M-4: MIME validation dari magic bytes (bukan header client) + size guard sebelum `file.read()`. `python-magic` + `libmagic1` ditambah ke Engine Dockerfile & requirements.
+  - Fixed M-5: `int(user_id)` di-wrap try/except → HTTP 401 bukan 500 untuk forged token.
+  - Fixed M-6: Email di-redact dari audit log `LOGIN_FAILED` → `"[redacted]"`.
+  - Fixed L-3: httpx versi konsisten `>=0.27.0` di semua service.
+  - Ditulis `docs/ARCHITECTURE.md` (754 baris, Bahasa Indonesia, 4 diagram Mermaid).
+  - Ditulis `docs/SECURITY-AUDIT.md` (172 baris, semua 11 temuan dengan status fix).
+  - Ditulis `security-hardening-plan.md` — 7 sub-task semua `[x] done`.
+  - Evidence: `python -m compileall` clean, 19 file berubah, semua grep check pass.
 
 - [x] **2026-06-23: Phase 1 Data Explorer CRUD Implementation (de-001):**
   - Built backend `DataExplorerService` using OOP for generic CRUD on 9 whitelisted engine/rekon tables.
@@ -117,8 +133,9 @@
 - Membuat konfigurasi dashboard auto-provisioning untuk Grafana: `dashboard.yml` dan `services.json` yang menampilkan grafik latensi P95 dan tingkat throughput service.
 
 ## Status Keseluruhan
-- **Seluruh 13 task** (10 di Phase 1, 3 di Phase 2) di `feature_list.json` telah terselesaikan dan lulus tes secara teknikal (Unit Test, Integration, dan Observability Config).
-- Phase 2 Enterprise Hardening meliputi sec-001 (Audit Logging), perf-001 (Redis Caching Analytics), dan ux-001 (Real-Time SSE Notifications).
+- **Seluruh 28 feature** di `feature_list.json` terselesaikan (26 fitur aplikasi + sec-006 security hardening + doc-001 dokumentasi arsitektur).
+- Phase 3 Security: 11 vulnerability findings — semua fixed kecuali L-1 (accepted risk) dan L-2 (accepted risk untuk dev env).
+- Sistem siap untuk deployment; `progress.md`, `feature_list.json`, dan `session-handoff.md` dalam keadaan akurat.
 
 ## Blockers / Risks
 

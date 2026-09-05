@@ -256,6 +256,27 @@
       ],
       "status": "done",
       "evidence": "Built DataExplorerService for generic CRUD. Added /engine/data-explorer UI with DynamicFormDialog. Verified via 100% backend tests and successful frontend build."
+    },
+    {
+      "id": "sec-006",
+      "name": "Security: Vulnerability Hardening (11 findings)",
+      "description": "Fix all P0/P1/P2/P3 security findings from manual code audit: hardcoded credentials, insecure cookie flags, SSE token in URL, MIME validation, Recon OOM risk, CORS wildcards, email enumeration, int(user_id) crash.",
+      "dependencies": [
+        "iam-001",
+        "eng-001",
+        "rec-002",
+        "ux-001"
+      ],
+      "status": "done",
+      "evidence": "19 files changed (+227/-85). python -m compileall all services passes. All grep checks confirmed: no DEBUG=True defaults, no hardcoded credentials, no wildcard CORS, no raw email in LOGIN_FAILED audit log, SSE ticket endpoint present with type=sse validation. security-hardening-plan.md all 7 sub-tasks marked done."
+    },
+    {
+      "id": "doc-001",
+      "name": "Documentation: Architecture + Security Audit",
+      "description": "Write docs/ARCHITECTURE.md (full system architecture in Bahasa Indonesia with Mermaid diagrams) and docs/SECURITY-AUDIT.md (audit findings, fix status, future audit guide).",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "docs/ARCHITECTURE.md created (754 lines, 10 sections, 4 Mermaid diagrams). docs/SECURITY-AUDIT.md created (172 lines, all 11 findings documented with fix status). python -m compileall unchanged — no code impact."
     }
   ]
 }
