@@ -12,7 +12,7 @@ import { QrisDiscrepancyChart } from "@/components/dashboard/QrisDiscrepancyChar
 
 export default function RekonQrisRintisDashboard() {
     const t = useTranslation("Reconciliation");
-    const [globalDate, setGlobalDate] = useState(getTodayIsoString());
+    const [globalDate, setGlobalDate] = useState("");
 
     // Fetch dynamic metrics
     const { data: metrics, isLoading } = useSWR("/api/recon/dashboard/rintis-stats", (url: string) => api<{ totalTransactions: number; settledAmount: number; unsettledAmount: number; totalDiscrepancyAmount: number }>(url));

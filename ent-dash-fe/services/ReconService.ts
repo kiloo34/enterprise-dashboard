@@ -2,6 +2,43 @@ import useSWR from "swr";
 import { api } from "@/utils/api";
 import { EngineLog, ReconStats } from "@/types/recon";
 
+// ── Reconciliation Network Stats ─────────────────────────────────────────────
+
+export interface NetworkReconStats {
+    totalTransactions: number;
+    settledAmount: number;
+    unsettledAmount: number;
+    totalDiscrepancyAmount: number;
+}
+
+export type ReconNetwork = "aj" | "rintis" | "onus";
+
+export function useNetworkStats(network: ReconNetwork, refreshInterval = 0) {
+    const endpointMap: Record<ReconNetwork, string> = {
+        aj: "api/recon/dashboard/aj-stats",
+        rintis: "api/recon/dashboard/rintis-stats",
+        onus: "api/recon/dashboard/onus-stats",
+    };
+
+    const { data, error, isValidating, mutate } = useSWR<NetworkReconStats>(
+        endpointMap[network],
+        (url) => api<NetworkReconStats>(url),
+        { refreshInterval }
+    );
+
+    return {
+        stats: data ?? null,
+        isLoading: !error && !data,
+        isError: !!error,
+        isValidating,
+        mutate,
+    };
+}
+
+export async function triggerReconcile(network: ReconNetwork): Promise<{ task_id: string }> {
+    return api<{ task_id: string }>(`api/recon/reconcile/${network}`, { method: "POST" });
+}
+
 export function useReconLogs(filters: {
     engineName?: string;
     logLevel?: string;

@@ -46,7 +46,7 @@ export default function RekonEnginePage() {
 
     // SWR General History Data Fetching - ALWAYS fetch to show logs
     const { data: rawHistory, mutate: mutateHistory } = useSWR(
-        'api/recon/imports',
+        'api/imports',
         async (url) => {
             const res = await api<ImportHistory[] | { data: ImportHistory[] }>(url);
             // Handle both wrapped and unwrapped responses
@@ -68,8 +68,16 @@ export default function RekonEnginePage() {
         return matchesSearch && matchesStatus && matchesTable;
     });
 
+    const MAX_FILE_SIZE_MB = 100;
+    const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
     const handleUpload = async () => {
         if (!file || !user?.accessToken) return;
+
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+            toast.error(`File terlalu besar. Maksimal ${MAX_FILE_SIZE_MB} MB.`);
+            return;
+        }
 
         setIsUploading(true);
         setUploadProgress(0);
@@ -84,7 +92,7 @@ export default function RekonEnginePage() {
                 setUploadProgress((prev) => (prev >= 90 ? 90 : prev + 10));
             }, 300);
 
-            await api('api/recon/imports/upload', {
+            await api('api/imports/upload', {
                 method: 'POST',
                 body: formData,
                 headers: {}
@@ -112,7 +120,7 @@ export default function RekonEnginePage() {
 
     const handleCancel = async (importId: string) => {
         try {
-            await api(`api/recon/imports/${importId}/cancel`, { method: 'POST' });
+            await api(`api/imports/${importId}/cancel`, { method: 'POST' });
             toast.success('Import dibatalkan.');
             mutateHistory();
         } catch (error) {
@@ -123,7 +131,7 @@ export default function RekonEnginePage() {
 
     const handleRetry = async (importId: string) => {
         try {
-            await api(`api/recon/imports/${importId}/retry`, { method: 'POST' });
+            await api(`api/imports/${importId}/retry`, { method: 'POST' });
             toast.success('Import sedang diproses ulang.');
             mutateHistory();
         } catch (error) {
@@ -135,7 +143,7 @@ export default function RekonEnginePage() {
     const handleResetStuck = async () => {
         try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const res = await api<any>('api/recon/imports/reset-stuck', { method: 'POST' });
+            const res = await api<any>('api/imports/reset-stuck', { method: 'POST' });
             toast.success(res.message || 'Import macet berhasil di-reset.');
             mutateHistory();
         } catch (error) {
