@@ -5,12 +5,12 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Analytics Service"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # Database — Analytics owns FinancialIndicator & FinancialMetric
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "password"
+    POSTGRES_PASSWORD: str  # No default — service fails to start if not set
     POSTGRES_DB: str = "ent_dash_analytics"
     POSTGRES_PORT: str = "5432"
 
