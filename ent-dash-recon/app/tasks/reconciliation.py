@@ -23,7 +23,11 @@ def reconcile_qris_aj(self):
     try:
         # Load raw data from engine database with date filter and row limit
         since = date.today() - timedelta(days=settings.RECON_LOOKBACK_DAYS)
+<<<<<<< HEAD
         with _recon_db.connect() as conn:
+=======
+        with _engine_db.connect() as conn:
+>>>>>>> agents/minio-functionality-explanation
             df = pd.read_sql(
                 text(
                     "SELECT * FROM rekon.rekon_qris_aj "
@@ -145,7 +149,11 @@ def reconcile_qris_rintis(self):
     logger.info("[Recon] Starting QRIS Rintis reconciliation task...")
     try:
         since = date.today() - timedelta(days=settings.RECON_LOOKBACK_DAYS)
+<<<<<<< HEAD
         with _recon_db.connect() as conn:
+=======
+        with _engine_db.connect() as conn:
+>>>>>>> agents/minio-functionality-explanation
             df = pd.read_sql(
                 text(
                     "SELECT * FROM rekon.rekon_qris_rintis "
@@ -330,7 +338,11 @@ def reconcile_qris_onus(self):
     logger.info("[Recon] Starting QRIS ONUS reconciliation task...")
     try:
         since = date.today() - timedelta(days=settings.RECON_LOOKBACK_DAYS)
+<<<<<<< HEAD
         with _recon_db.connect() as conn:
+=======
+        with _engine_db.connect() as conn:
+>>>>>>> agents/minio-functionality-explanation
             df = pd.read_sql(
                 text(
                     "SELECT * FROM rekon.rekon_qris_onus "

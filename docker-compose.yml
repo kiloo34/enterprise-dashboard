@@ -235,6 +235,7 @@ services:
       - POSTGRES_DB=ent_dash_engine
       - POSTGRES_PORT=5432
       - SECRET_KEY=${SECRET_KEY}
+      - RECON_DATABASE_URI=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:5432/ent_dash_recon
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - MINIO_ENDPOINT=minio:9000
@@ -280,6 +281,7 @@ services:
       - POSTGRES_DB=ent_dash_engine
       - POSTGRES_PORT=5432
       - SECRET_KEY=${SECRET_KEY}
+      - RECON_DATABASE_URI=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:5432/ent_dash_recon
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - MINIO_ENDPOINT=minio:9000

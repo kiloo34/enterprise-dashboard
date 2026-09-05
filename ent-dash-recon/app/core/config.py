@@ -9,7 +9,11 @@ class Settings(BaseSettings):
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str  # No default — service fails to start if not set
+<<<<<<< HEAD
     POSTGRES_DB: str = "cbskonv"
+=======
+    POSTGRES_DB: str = "ent_dash_recon"
+>>>>>>> agents/minio-functionality-explanation
     POSTGRES_PORT: str = "5432"
 
     @property

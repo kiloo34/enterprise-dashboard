@@ -12,8 +12,12 @@ class Settings(BaseSettings):
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str  # No default — service fails to start if not set
+    POSTGRES_PASSWORD: str  # No default — service fails to start if not set
     POSTGRES_DB: str = "ent_dash_engine"
     POSTGRES_PORT: str = "5432"
+
+    # Recon DB — for writing rekon.* tables that the Recon service reads
+    RECON_DATABASE_URI: str = ""
 
     @property
     def sqlalchemy_database_uri(self) -> str:
