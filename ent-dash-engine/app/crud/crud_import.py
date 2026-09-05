@@ -23,6 +23,7 @@ class FileImportUpdate(BaseModel):
     failed_rows: Optional[int] = None
     error_log: Optional[Dict[str, Any]] = None
     kafka_published: Optional[str] = None
+    celery_task_id: Optional[str] = None
 
 
 class CRUDFileImport(CRUDBase[FileImport, FileImportCreate, FileImportUpdate]):

@@ -5,12 +5,13 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# librdkafka needed by confluent-kafka
+# librdkafka needed by confluent-kafka; libmagic for server-side MIME detection
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
     gcc \
     librdkafka-dev \
+    libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install shared common library first (using Docker additional_contexts)

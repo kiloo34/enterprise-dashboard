@@ -36,17 +36,40 @@ logger = logging.getLogger(__name__)
 
 CHUNK_SIZE = 1000  # Balanced for memory vs. DB round-trips
 
-# ── Synchronous DB session for Celery worker ─────────────────────────────────
+# ── Synchronous DB sessions for Celery worker ────────────────────────────────
 # asyncpg (async) is for FastAPI handlers. Celery uses psycopg2 (sync).
+
+# Engine DB — owns app.file_imports and non-rekon tables
 _sync_engine = create_engine(
-    settings.sqlalchemy_database_uri.replace(
-        "postgresql+asyncpg", "postgresql+psycopg2"
-    ),
+    settings.sqlalchemy_database_uri.replace("postgresql+asyncpg", "postgresql+psycopg2"),
     pool_size=2,
     max_overflow=2,
     pool_pre_ping=True,
 )
 SyncSessionLocal = sessionmaker(bind=_sync_engine, autocommit=False, autoflush=False)
+
+# Recon DB — owns rekon.* tables read by the Recon service dashboard
+_recon_engine = create_engine(
+    settings.recon_database_uri_sync,
+    pool_size=2,
+    max_overflow=2,
+    pool_pre_ping=True,
+)
+ReconSessionLocal = sessionmaker(bind=_recon_engine, autocommit=False, autoflush=False)
+
+# Tables that belong to the Recon DB
+RECON_TABLES = frozenset({
+    "rekon.rekon_qris_aj",
+    "rekon.rekon_qris_onus",
+    "rekon.rekon_qris_rintis",
+})
+
+
+def _get_session_for_table(target_table: str):
+    """Return the correct SessionLocal based on the target table."""
+    if target_table in RECON_TABLES:
+        return ReconSessionLocal
+    return SyncSessionLocal
 
 
 @celery_app.task(bind=True, name="tasks.process_csv_import", max_retries=3, default_retry_delay=60)
@@ -56,6 +79,17 @@ def process_csv_import(self, import_id: str, object_name: str, target_table: str
     Fully synchronous — no asyncio.run() to avoid event loop conflicts.
     """
     logger.info(f"[Worker] Starting CSV import: {import_id}, table: {target_table}")
+    # Persist Celery task ID so the API can revoke/track this task
+    try:
+        with SyncSessionLocal() as db:
+            db.execute(
+                text("UPDATE app.file_imports SET celery_task_id=:tid WHERE id=:id"),
+                {"tid": self.request.id, "id": import_id},
+            )
+            db.commit()
+    except Exception:
+        pass  # Non-critical — proceed even if task ID write fails
+
     try:
         _process_csv_sync(import_id, object_name, target_table)
     except Exception as exc:
@@ -81,32 +115,39 @@ def _download_from_minio(object_name: str) -> bytes:
 
 def _process_csv_sync(import_id: str, object_name: str, target_table: str):
     """Synchronous CSV processing logic — safe to call from Celery worker."""
-    with SyncSessionLocal() as db:
-        # Normalize target_table schema prefix
-        engine_tables = [
-            "engine_sts_load_data", "engine_sts_load_data_his",
-            "engine_sts_proses_rpt", "engine_sts_proses_rpt_his",
-            "rekon_qris_aj", "rekon_qris_onus", "rekon_qris_rintis",
-            "engine_job_log", "engine_job_entry_log"
-        ]
-        if "." not in target_table:
-            if target_table in engine_tables:
-                target_table = f"rekon.{target_table}"
-            elif target_table == "fact_kinerjaprc":
-                target_table = '"TABLEAU_REPORT".fact_kinerjaprc'
-        elif target_table.startswith("TABLEAU_REPORT."):
-            table_name = target_table.split(".")[-1]
-            target_table = f'"TABLEAU_REPORT".{table_name}'
+    # Normalize target_table schema prefix first (before routing decision)
+    rekon_tables = ["rekon_qris_aj", "rekon_qris_onus", "rekon_qris_rintis"]
+    engine_tables = [
+        "engine_sts_load_data", "engine_sts_load_data_his",
+        "engine_sts_proses_rpt", "engine_sts_proses_rpt_his",
+        "engine_job_log", "engine_job_entry_log"
+    ]
+    if "." not in target_table:
+        if target_table in rekon_tables:
+            target_table = f"rekon.{target_table}"
+        elif target_table in engine_tables:
+            target_table = f"app.{target_table}"
+        elif target_table == "fact_kinerjaprc":
+            target_table = '"TABLEAU_REPORT".fact_kinerjaprc'
+    elif target_table.startswith("TABLEAU_REPORT."):
+        table_name = target_table.split(".")[-1]
+        target_table = f'"TABLEAU_REPORT".{table_name}'
 
-        # Mark as processing
+    # Route to correct DB: rekon.* → Recon DB, everything else → Engine DB
+    SessionLocal = _get_session_for_table(target_table)
+
+    with SyncSessionLocal() as engine_db:
+        # Always update file_imports status in Engine DB
         try:
-            db.execute(
+            engine_db.execute(
                 text("UPDATE app.file_imports SET status='processing' WHERE id=:id"),
                 {"id": import_id}
             )
-            db.commit()
+            engine_db.commit()
         except Exception:
-            db.rollback()
+            engine_db.rollback()
+
+    with SessionLocal() as db:
 
         total_rows = processed_rows = failed_rows = 0
 
@@ -130,6 +171,27 @@ def _process_csv_sync(import_id: str, object_name: str, target_table: str):
             clean_headers = [h.strip().lower().replace('"', "").replace("'", "") for h in raw_headers]
             reader.fieldnames = clean_headers
 
+            # Fetch valid DB columns once — reused for every chunk (avoids N queries)
+            schema, tname = (target_table.split(".", 1) if "." in target_table else (None, target_table))
+            schema = schema.strip('"') if schema else None
+            tname = tname.strip('"')
+            valid_cols = _get_table_columns(db, schema, tname)
+            if not valid_cols:
+                raise ValueError(f"Table {target_table} not found or has no columns.")
+            csv_cols = set(clean_headers)
+            unknown = csv_cols - valid_cols
+            if unknown:
+                logger.warning(
+                    f"[Worker] {import_id}: Ignoring {len(unknown)} unknown CSV column(s): {sorted(unknown)}"
+                )
+            usable_cols = [c for c in clean_headers if c in valid_cols]
+            if not usable_cols:
+                raise ValueError(
+                    f"No matching columns between CSV and table {target_table}. "
+                    f"CSV has: {sorted(csv_cols)}. Table has: {sorted(valid_cols)}."
+                )
+            logger.info(f"[Worker] {import_id}: Using {len(usable_cols)}/{len(csv_cols)} CSV columns for insert.")
+
             rows = []
             for row in reader:
                 total_rows += 1
@@ -138,40 +200,23 @@ def _process_csv_sync(import_id: str, object_name: str, target_table: str):
                     for k, v in row.items()
                     if k is not None
                 }
-                clean_row = {k: v for k, v in normalized.items() if k}
-                if clean_row:
+                clean_row = {c: normalized.get(c) for c in usable_cols}
+                if any(v is not None for v in clean_row.values()):
                     rows.append(clean_row)
 
                 if len(rows) >= CHUNK_SIZE:
-                    ok, fail = _bulk_insert(db, target_table, rows)
+                    ok, fail = _bulk_insert(db, target_table, rows, valid_cols=valid_cols)
                     processed_rows += ok
                     failed_rows += fail
                     rows = []
                     logger.info(f"[Worker] {import_id}: Processed {processed_rows}/{total_rows} rows...")
 
             if rows:
-                ok, fail = _bulk_insert(db, target_table, rows)
+                ok, fail = _bulk_insert(db, target_table, rows, valid_cols=valid_cols)
                 processed_rows += ok
                 failed_rows += fail
 
             final_status = "completed" if failed_rows == 0 else "partial"
-            db.execute(
-                text("""
-                    UPDATE app.file_imports
-                    SET status=:status, total_rows=:total, processed_rows=:proc,
-                        failed_rows=:fail, updated_at=:now
-                    WHERE id=:id
-                """),
-                {
-                    "status": final_status,
-                    "total": total_rows,
-                    "proc": processed_rows,
-                    "fail": failed_rows,
-                    "id": import_id,
-                    "now": datetime.utcnow(),
-                }
-            )
-            db.commit()
             logger.info(f"[Worker] Import {import_id} done: {processed_rows}/{total_rows} rows (failed: {failed_rows})")
 
             # Publish completion event to Kafka for downstream consumers (Analytics)
@@ -190,11 +235,11 @@ def _process_csv_sync(import_id: str, object_name: str, target_table: str):
                 key=import_id,
                 client_id="ent-dash-engine-worker",
             )
-            
+
             # Publish real-time notification via Redis PubSub
             import redis
-            r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
             import json
+            r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
             msg = json.dumps({"type": "success", "message": f"Import {import_id} completed", "details": f"{processed_rows} rows processed successfully."})
             r.publish("notifications", json.dumps({"type": "message", "data": msg}))
             r.close()
@@ -203,23 +248,66 @@ def _process_csv_sync(import_id: str, object_name: str, target_table: str):
             db.rollback()
             err_trace = traceback.format_exc()
             logger.error(f"[Worker] Import {import_id} failed: {e}\n{err_trace}")
-            try:
-                db.execute(
-                    text("UPDATE app.file_imports SET status='failed', error_log=:err WHERE id=:id"),
-                    {"err": {"message": str(e), "trace": err_trace}, "id": import_id}
-                )
-                db.commit()
-            except Exception:
-                pass
+            # Write failure status back to Engine DB
+            with SyncSessionLocal() as engine_db:
+                try:
+                    engine_db.execute(
+                        text("UPDATE app.file_imports SET status='failed', error_log=:err WHERE id=:id"),
+                        {"err": {"message": str(e), "trace": err_trace}, "id": import_id}
+                    )
+                    engine_db.commit()
+                except Exception:
+                    pass
             raise
 
+    # Write final status to Engine DB (outside the data-writing session)
+    with SyncSessionLocal() as engine_db:
+        try:
+            engine_db.execute(
+                text("""
+                    UPDATE app.file_imports
+                    SET status=:status, total_rows=:total, processed_rows=:proc,
+                        failed_rows=:fail, updated_at=:now
+                    WHERE id=:id
+                """),
+                {
+                    "status": final_status,
+                    "total": total_rows,
+                    "proc": processed_rows,
+                    "fail": failed_rows,
+                    "id": import_id,
+                    "now": datetime.utcnow(),
+                }
+            )
+            engine_db.commit()
+        except Exception:
+            pass
 
-def _bulk_insert(db, target_table: str, rows: list) -> tuple[int, int]:
-    """Insert a chunk of rows — idempotent via ON CONFLICT DO NOTHING. Safe against SQLi."""
+
+def _get_table_columns(db, schema: str | None, table_name: str) -> set[str]:
+    """Fetch actual column names from DB for the target table."""
+    if schema:
+        sql = text(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_schema = :schema AND table_name = :table"
+        )
+        result = db.execute(sql, {"schema": schema, "table": table_name})
+    else:
+        sql = text(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name = :table"
+        )
+        result = db.execute(sql, {"table": table_name})
+    return {row[0] for row in result}
+
+
+def _bulk_insert(db, target_table: str, rows: list, valid_cols: set | None = None) -> tuple[int, int]:
+    """Insert a chunk of rows — idempotent via ON CONFLICT DO NOTHING. Safe against SQLi.
+    valid_cols: pre-fetched set of DB column names. Rows are already filtered by caller.
+    """
     if not rows:
         return 0, 0
-    cols = list(rows[0].keys())
-    
+
     # Safely parse schema and table_name
     schema = None
     if "." in target_table:
@@ -228,10 +316,13 @@ def _bulk_insert(db, target_table: str, rows: list) -> tuple[int, int]:
         table_name = parts[1].strip('"')
     else:
         table_name = target_table.strip('"')
-        
+
+    # Rows are already filtered upstream — just take the keys from first row
+    usable_cols = list(rows[0].keys())
+
     # Construct dynamic SQLAlchemy table structure
-    t = table(table_name, *(column(c) for c in cols), schema=schema)
-    
+    t = table(table_name, *(column(c) for c in usable_cols), schema=schema)
+
     try:
         stmt = insert(t).on_conflict_do_nothing()
         db.execute(stmt, rows)

@@ -22,17 +22,18 @@ async def get_current_user_payload(token: str = Depends(oauth2_scheme)) -> dict:
 
 from fastapi import Query
 
-async def get_current_user_from_query(token: str = Query(..., description="JWT access token")) -> dict:
+async def get_current_user_from_query(token: str = Query(..., description="Short-lived SSE ticket")) -> dict:
     """
-    Stateless JWT validation for Server-Sent Events (SSE) which cannot send headers.
+    Validates a short-lived SSE ticket (type='sse', TTL 60s) issued by POST /api/auth/sse-ticket.
+    The main access token must NEVER be passed here to avoid it appearing in server logs.
     """
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        if payload.get("sub") is None:
-            raise UnauthorizedException(message="Invalid token payload", code="INVALID_TOKEN")
+        if payload.get("sub") is None or payload.get("type") != "sse":
+            raise UnauthorizedException(message="Invalid SSE ticket", code="INVALID_TOKEN")
         return payload
     except JWTError:
-        raise UnauthorizedException(message="Could not validate credentials", code="INVALID_TOKEN")
+        raise UnauthorizedException(message="Could not validate SSE ticket", code="INVALID_TOKEN")
 
 
 def require_engine_permission(required_permissions: list[str]):

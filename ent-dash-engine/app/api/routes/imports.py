@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Form
-from app.core.exceptions import NotFoundException
+from fastapi import APIRouter, Depends, UploadFile, File, Form, Query
+from app.core.exceptions import NotFoundException, AppException
+from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any, List, Dict
 
@@ -41,27 +42,22 @@ async def upload_file(
     """
     Upload a CSV/data file. The file is stored in MinIO and
     a Kafka event is published for async processing by the worker.
+    File size and MIME type are validated inside ImportService using magic bytes.
     """
     from app.core.exceptions import AppException
     from fastapi import status
-    
-    ALLOWED_MIME_TYPES = [
-        "text/csv", 
-        "application/vnd.ms-excel", 
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    ]
-    MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
-    
-    if file.content_type not in ALLOWED_MIME_TYPES:
-        raise AppException(code="INVALID_FILE_TYPE", message="Tipe file tidak diizinkan. Harap unggah file CSV atau Excel.", status_code=status.HTTP_400_BAD_REQUEST)
-        
-    if getattr(file, "size", 0) and file.size > MAX_FILE_SIZE:
-        raise AppException(code="FILE_TOO_LARGE", message=f"Ukuran file melampaui batas maksimal {MAX_FILE_SIZE // (1024*1024)}MB.", status_code=status.HTTP_400_BAD_REQUEST)
 
     import_service = ImportService(db)
-    file_import = await import_service.process_upload(
-        file, target_table, int(payload["sub"])
-    )
+    try:
+        file_import = await import_service.process_upload(
+            file, target_table, int(payload["sub"])
+        )
+    except ValueError as exc:
+        raise AppException(
+            code="INVALID_FILE",
+            message=str(exc),
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
     return FileImportCreateResponse(
         id=file_import.id,
         status="success",
@@ -89,36 +85,61 @@ async def get_import(
 async def cancel_import(
     id: str,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(get_current_user_payload)
+    _: dict = Depends(get_current_user_payload),
 ) -> Any:
-    # Placeholder: actually we should update the DB status to CANCELLED
+    """
+    Cancel a pending or processing import.
+    Revokes the underlying Celery task and marks the record as 'cancelled'.
+    Returns 409 if the import is already completed, failed, or cancelled.
+    """
     import_service = ImportService(db)
-    file_import = await import_service.get_by_id(id)
-    if not file_import:
-        raise NotFoundException(message="Import not found", code="IMPORT_NOT_FOUND")
-    file_import.status = "FAILED"
-    await db.commit()
-    return {"message": "Import cancelled successfully"}
+    try:
+        file_import = await import_service.cancel_import(id)
+    except ValueError as exc:
+        raise AppException(
+            code="CANCEL_NOT_ALLOWED",
+            message=str(exc),
+            status_code=status.HTTP_409_CONFLICT,
+        )
+    return {"message": "Import cancelled successfully", "import_id": id, "status": file_import.status}
+
 
 @router.post("/{id}/retry", response_model=Dict[str, Any])
 async def retry_import(
     id: str,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(get_current_user_payload)
+    _: dict = Depends(get_current_user_payload),
 ) -> Any:
-    # Placeholder: actually we should re-queue the task
+    """
+    Retry a failed or partial import by re-queuing the Celery task.
+    Returns 409 if the import is not in a retriable state.
+    """
     import_service = ImportService(db)
-    file_import = await import_service.get_by_id(id)
-    if not file_import:
-        raise NotFoundException(message="Import not found", code="IMPORT_NOT_FOUND")
-    file_import.status = "PROCESSING"
-    await db.commit()
-    return {"message": "Import retry started"}
+    try:
+        await import_service.retry_import(id)
+    except ValueError as exc:
+        raise AppException(
+            code="RETRY_NOT_ALLOWED",
+            message=str(exc),
+            status_code=status.HTTP_409_CONFLICT,
+        )
+    return {"message": "Import retry queued successfully", "import_id": id}
+
 
 @router.post("/reset-stuck", response_model=Dict[str, Any])
 async def reset_stuck_imports(
+    threshold_minutes: int = Query(120, ge=1, le=1440, description="Minutes before a processing import is considered stuck"),
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(get_current_user_payload)
+    _: dict = Depends(get_current_user_payload),
 ) -> Any:
-    # Placeholder: query all PROCESSING older than X and mark FAILED
-    return {"message": "Stuck imports have been reset"}
+    """
+    Reset imports stuck in 'processing' status for longer than threshold_minutes (default: 120 min).
+    Returns the count of records that were reset to 'failed'.
+    """
+    import_service = ImportService(db)
+    reset_count = await import_service.reset_stuck_imports(threshold_minutes=threshold_minutes)
+    return {
+        "message": f"Reset {reset_count} stuck import(s).",
+        "reset_count": reset_count,
+        "threshold_minutes": threshold_minutes,
+    }

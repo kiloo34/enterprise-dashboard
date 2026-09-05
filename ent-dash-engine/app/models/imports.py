@@ -24,7 +24,8 @@ class FileImport(Base):
     total_rows = Column(BigInteger, default=0)
     processed_rows = Column(BigInteger, default=0)
     failed_rows = Column(BigInteger, default=0)
-    status = Column(String(50), default="pending")          # pending | processing | completed | partial | failed
+    status = Column(String(50), default="pending")          # pending | processing | completed | partial | failed | cancelled
+    celery_task_id = Column(String(255), nullable=True)     # Celery task ID for revoke/tracking
 
     error_log = Column(JSON, nullable=True)
     kafka_published = Column(String(5), default="false")    # Track if Kafka event was published
