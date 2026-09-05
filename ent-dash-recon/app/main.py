@@ -55,8 +55,8 @@ def create_app() -> FastAPI:
         allow_origin_regex=r"http://(localhost|127\.0\.0\.1|172\.20\.10\.4)(:\d+)?",
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-        allow_headers=["*"],
-        expose_headers=["*"],
+        allow_headers=["Content-Type", "Authorization", "Accept"],
+        expose_headers=["Content-Type"],
     )
 
     @app.exception_handler(HTTPException)

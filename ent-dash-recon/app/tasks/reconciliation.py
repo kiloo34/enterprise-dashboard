@@ -1,5 +1,6 @@
 import pandas as pd
 import logging
+from datetime import date, timedelta
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from app.worker import celery_app
@@ -25,10 +26,24 @@ ReconSession = sessionmaker(bind=_recon_db)
 def reconcile_qris_aj(self):
     logger.info("[Recon] Starting QRIS Artajasa reconciliation task...")
     try:
-        # Load raw data from engine database
+        # Load raw data from engine database with date filter and row limit
+        since = date.today() - timedelta(days=settings.RECON_LOOKBACK_DAYS)
         with _engine_db.connect() as conn:
-            df = pd.read_sql("SELECT * FROM rekon.rekon_qris_aj", conn)
-        
+            df = pd.read_sql(
+                text(
+                    "SELECT * FROM rekon.rekon_qris_aj "
+                    "WHERE transaction_date >= :since "
+                    "LIMIT :max_rows"
+                ),
+                conn,
+                params={"since": since, "max_rows": settings.RECON_MAX_ROWS},
+            )
+        if len(df) >= settings.RECON_MAX_ROWS:
+            logger.warning(
+                f"[Recon AJ] Result truncated at {settings.RECON_MAX_ROWS} rows. "
+                "Consider reducing RECON_LOOKBACK_DAYS or increasing RECON_MAX_ROWS."
+            )
+
         if df.empty:
             logger.info("[Recon] No Artajasa transactions found in engine database.")
             # Clear target recon table anyway
@@ -134,9 +149,23 @@ def reconcile_qris_aj(self):
 def reconcile_qris_rintis(self):
     logger.info("[Recon] Starting QRIS Rintis reconciliation task...")
     try:
+        since = date.today() - timedelta(days=settings.RECON_LOOKBACK_DAYS)
         with _engine_db.connect() as conn:
-            df = pd.read_sql("SELECT * FROM rekon.rekon_qris_rintis", conn)
-        
+            df = pd.read_sql(
+                text(
+                    "SELECT * FROM rekon.rekon_qris_rintis "
+                    "WHERE transaction_date >= :since "
+                    "LIMIT :max_rows"
+                ),
+                conn,
+                params={"since": since, "max_rows": settings.RECON_MAX_ROWS},
+            )
+        if len(df) >= settings.RECON_MAX_ROWS:
+            logger.warning(
+                f"[Recon Rintis] Result truncated at {settings.RECON_MAX_ROWS} rows. "
+                "Consider reducing RECON_LOOKBACK_DAYS or increasing RECON_MAX_ROWS."
+            )
+
         if df.empty:
             logger.info("[Recon] No Rintis transactions found in engine database.")
             with ReconSession() as session:
@@ -305,9 +334,23 @@ def reconcile_qris_rintis(self):
 def reconcile_qris_onus(self):
     logger.info("[Recon] Starting QRIS ONUS reconciliation task...")
     try:
+        since = date.today() - timedelta(days=settings.RECON_LOOKBACK_DAYS)
         with _engine_db.connect() as conn:
-            df = pd.read_sql("SELECT * FROM rekon.rekon_qris_onus", conn)
-        
+            df = pd.read_sql(
+                text(
+                    "SELECT * FROM rekon.rekon_qris_onus "
+                    "WHERE transaction_date >= :since "
+                    "LIMIT :max_rows"
+                ),
+                conn,
+                params={"since": since, "max_rows": settings.RECON_MAX_ROWS},
+            )
+        if len(df) >= settings.RECON_MAX_ROWS:
+            logger.warning(
+                f"[Recon ONUS] Result truncated at {settings.RECON_MAX_ROWS} rows. "
+                "Consider reducing RECON_LOOKBACK_DAYS or increasing RECON_MAX_ROWS."
+            )
+
         if df.empty:
             logger.info("[Recon] No ONUS transactions found in engine database.")
             with ReconSession() as session:
