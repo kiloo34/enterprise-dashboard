@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "ent_dash_engine"
     POSTGRES_PORT: str = "5432"
 
+    # Recon DB — for writing rekon.* tables that the Recon service reads
+    RECON_DATABASE_URI: str = ""
+
     @property
     def sqlalchemy_database_uri(self) -> str:
         return (
