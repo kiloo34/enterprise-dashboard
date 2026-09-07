@@ -41,6 +41,7 @@ export function useSidebarNavigation() {
 
     const canManageRbac = isAdmin || permissions.some((p: string) => p.includes("role") || p.includes("permission") || p.includes("rbac"));
     const canManageUser = isAdmin || permissions.some((p: string) => p.includes("user"));
+    const canViewUseCaseChurn = isAdmin || permissions.includes("view-use-case-churn");
     const canManageOrgUnit = isAdmin || permissions.some((p: string) => p.includes("organization-unit"));
     const canManageAccess = canManageRbac || canManageUser || canManageOrgUnit;
 
@@ -132,6 +133,7 @@ export function useSidebarNavigation() {
         canViewRekonQrisRintis,
         canViewRekonQrisOnUs,
         canManageUser,
+        canViewUseCaseChurn,
         canManageRbac,
         isDireksiRole,
         isOperasiRole,
@@ -142,3 +144,4 @@ export function useSidebarNavigation() {
         user,
     };
 }
+

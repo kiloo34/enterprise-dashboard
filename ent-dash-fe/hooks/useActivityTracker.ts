@@ -12,7 +12,7 @@ export function useActivityTracker() {
 
     const trackPageVisit = async () => {
       try {
-        await fetch("/api/v1/iam/audit-logs/activity", {
+        await fetch("/api/audit-logs/activity", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

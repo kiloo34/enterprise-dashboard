@@ -12,11 +12,7 @@ from app.db.base import Base
 
 # Import all models here so Alembic can see them
 from app.models.imports import FileImport
-from app.models.engine import (
-    EngineProcessGroup, EngineProcessGroupHis, EngineStsLoadData, 
-    EngineStsLoadDataHis, EngineStsProseRpt, EngineStsProseRptHis, 
-    EngineJobEntryLog, EngineJobLog, EngineSettingDb
-)
+
 
 config = context.config
 

@@ -11,7 +11,7 @@ services:
       - "--log.level=FATAL"
       - "--api.insecure=false"
     ports:
-      - "80:80"
+      - "8000:80"
       - "127.0.0.1:8080:8080" # Traefik Dashboard — localhost only
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
@@ -164,21 +164,23 @@ services:
       # Internal service URLs
       - ENGINE_INTERNAL_URL=http://engine:8000
       # CORS — ganti sesuai domain production Anda
-      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080,http://localhost
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080,http://localhost,http://localhost:8000
     depends_on:
       db:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.iam.rule=PathPrefix(`/api/auth`) || PathPrefix(`/api/user`) || PathPrefix(`/api/users`) || PathPrefix(`/api/roles`) || PathPrefix(`/api/permissions`) || PathPrefix(`/api/positions`) || PathPrefix(`/api/organization-units`) || PathPrefix(`/api/admin`) || PathPrefix(`/api/system-config`) || PathPrefix(`/api/translations`)"
+      - "traefik.http.routers.iam.rule=PathPrefix(`/api/auth`) || PathPrefix(`/api/user`) || PathPrefix(`/api/users`) || PathPrefix(`/api/roles`) || PathPrefix(`/api/permissions`) || PathPrefix(`/api/positions`) || PathPrefix(`/api/organization-units`) || PathPrefix(`/api/admin`) || PathPrefix(`/api/system-config`) || PathPrefix(`/api/translations`) || PathPrefix(`/api/navigation`)"
       - "traefik.http.routers.iam.entrypoints=web"
       - "traefik.http.routers.iam.priority=50"
+      - "traefik.http.routers.iam.service=iam"
       - "traefik.http.routers.iam.middlewares=secure-headers,auto-retry"
       - "traefik.http.services.iam.loadbalancer.server.port=8000"
       # T1: Rate limit khusus login endpoint — 10 req/menit per IP (anti brute-force)
       - "traefik.http.routers.iam-login.rule=Path(`/api/auth/login`)"
       - "traefik.http.routers.iam-login.entrypoints=web"
       - "traefik.http.routers.iam-login.priority=100"
+      - "traefik.http.routers.iam-login.service=iam"
       - "traefik.http.routers.iam-login.middlewares=login-ratelimit"
       - "traefik.http.middlewares.login-ratelimit.ratelimit.average=10"
       - "traefik.http.middlewares.login-ratelimit.ratelimit.period=1m"

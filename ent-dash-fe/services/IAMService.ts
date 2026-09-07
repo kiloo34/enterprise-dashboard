@@ -93,3 +93,17 @@ export const IAMService = {
     updateRole: (id: number, data: { name?: string; permission_ids?: number[] }) => api<Role>(`/api/roles/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     deleteRole: (id: number) => api(`/api/roles/${id}`, { method: 'DELETE' }),
 };
+
+export interface MenuItem {
+    type: 'item' | 'dropdown' | 'section';
+    id?: string;
+    href?: string;
+    icon?: string;
+    label: string;
+    items?: MenuItem[];
+}
+
+export const useNavigationMenus = () => {
+    const { data, error, isLoading, mutate } = useSWR<MenuItem[]>('/api/navigation/menus', fetcher);
+    return { menus: data || [], isLoading, isError: error, mutate };
+};
