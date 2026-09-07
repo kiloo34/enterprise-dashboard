@@ -58,8 +58,12 @@ async def get_navigation_menus(
         return []
 
     # Extract user permissions
+    is_super_admin = any(r.name in ["Super Admin", "super-admin"] for r in (current_user.roles or []))
     user_permissions = {p.name for r in (current_user.roles or []) for p in (r.permissions or [])}
     
+    if is_super_admin:
+        return raw_menus
+        
     # Filter the menu tree
     filtered_menus = filter_menu_items(raw_menus, user_permissions)
     return filtered_menus

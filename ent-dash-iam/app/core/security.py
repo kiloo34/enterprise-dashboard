@@ -45,10 +45,6 @@ def create_sse_ticket(subject: Union[str, Any]) -> str:
     Used exclusively for the SSE /notifications endpoint so that
     the main access token never appears in URL query strings / server logs.
     """
-<<<<<<< HEAD
     expire = datetime.now(timezone.utc) + timedelta(seconds=60)
-=======
-    expire = datetime.utcnow() + timedelta(seconds=60)
->>>>>>> aa7789f (feat: implement security hardening including SSE ticket authentication, reconciliation memory limits, and audit log redaction.)
     to_encode = {"exp": expire, "sub": str(subject), "type": "sse"}
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)

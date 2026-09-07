@@ -133,7 +133,7 @@ async def seed_data(db: AsyncSession):
         "manage-sts-proses-rpt", "view-sts-proses-rpt", "view-sts-proses-rpt-his",
         "create-sts-proses-rpt", "update-sts-proses-rpt", "delete-sts-proses-rpt",
         "manage-engine-setting-db", "view-engine-setting-db", "create-engine-setting-db",
-        "update-engine-setting-db", "delete-engine-setting-db"
+        "update-engine-setting-db", "delete-engine-setting-db", "view-data-dictionary"
     ]
 
     rbac_perms = [
@@ -300,7 +300,7 @@ async def seed_system_configs(db: AsyncSession) -> None:
         },
         {
             "key": "frontend.navigation.menus",
-            "value": '[{"type": "item", "href": "/direksi/kinerja-keuangan", "icon": "BarChart2", "label": "t.direkturUtama", "permission_required": ["view-dashboard-keuangan", "dashboard-keuangan-all"]}, {"type": "dropdown", "icon": "Briefcase", "label": "t.divisiOperasi", "permission_required": ["view-dashboard-operasi-rekon-qris-aj", "view-dashboard-operasi-rekon-qris-prima"], "items": [{"type": "item", "href": "/divisi-operasi/summary", "icon": "BarChart2", "label": "t.summary", "permission_required": ["view-dashboard-operasi-rekon-qris-aj"]}, {"type": "item", "href": "/divisi-operasi/rekon-qris-aj", "icon": "FileText", "label": "t.rekonQris", "permission_required": ["view-dashboard-operasi-rekon-qris-aj"]}, {"type": "item", "href": "/divisi-operasi/rekon-qris-rintis", "icon": "FileText", "label": "t.rekonQrisRintis", "permission_required": ["view-dashboard-operasi-rekon-qris-prima"]}, {"type": "item", "href": "/divisi-operasi/rekon-qris-on-us", "icon": "FileText", "label": "t.rekonQrisOnus", "permission_required": ["view-dashboard-operasi-rekon-qris-onus"]}]}, {"type": "dropdown", "icon": "Settings", "label": "t.engine", "permission_required": ["manage-job-log", "view-job-log"], "items": [{"type": "item", "href": "/rekon-engine/import", "icon": "UploadCloud", "label": "t.importData", "permission_required": ["manage-job-log"]}, {"type": "item", "href": "/rekon-engine", "icon": "BarChart2", "label": "t.monitoring", "permission_required": ["view-job-log"]}, {"type": "item", "href": "/engine/data-explorer", "icon": "Database", "label": "Data Explorer", "permission_required": ["view-job-log"]}]}, {"type": "section", "label": "Use Case", "permission_required": ["view-use-case-churn"], "items": [{"type": "item", "href": "/use-case/churn-retail-model", "icon": "Activity", "label": "Churn Retail Model", "permission_required": ["view-use-case-churn"]}]}]',
+            "value": '[{"type": "item", "href": "/direksi/kinerja-keuangan", "icon": "BarChart2", "label": "t.direkturUtama", "permission_required": ["view-dashboard-keuangan", "dashboard-keuangan-all"]}, {"type": "dropdown", "icon": "Briefcase", "label": "t.divisiOperasi", "permission_required": ["view-dashboard-operasi-rekon-qris-aj", "view-dashboard-operasi-rekon-qris-prima"], "items": [{"type": "item", "href": "/divisi-operasi/summary", "icon": "BarChart2", "label": "t.summary", "permission_required": ["view-dashboard-operasi-rekon-qris-aj"]}, {"type": "item", "href": "/divisi-operasi/rekon-qris-aj", "icon": "FileText", "label": "t.rekonQris", "permission_required": ["view-dashboard-operasi-rekon-qris-aj"]}, {"type": "item", "href": "/divisi-operasi/rekon-qris-rintis", "icon": "FileText", "label": "t.rekonQrisRintis", "permission_required": ["view-dashboard-operasi-rekon-qris-prima"]}, {"type": "item", "href": "/divisi-operasi/rekon-qris-on-us", "icon": "FileText", "label": "t.rekonQrisOnus", "permission_required": ["view-dashboard-operasi-rekon-qris-onus"]}]}, {"type": "dropdown", "icon": "Settings", "label": "t.engine", "permission_required": ["manage-job-log", "view-job-log"], "items": [{"type": "item", "href": "/rekon-engine/import", "icon": "UploadCloud", "label": "t.importData", "permission_required": ["manage-job-log"]}, {"type": "item", "href": "/rekon-engine", "icon": "BarChart2", "label": "t.monitoring", "permission_required": ["view-job-log"]}, {"type": "item", "href": "/engine/data-explorer", "icon": "Database", "label": "Data Explorer", "permission_required": ["view-job-log"]}, {"type": "item", "href": "/engine/dictionary", "icon": "FileText", "label": "Data Dictionary", "permission_required": ["view-data-dictionary"]}]}, {"type": "section", "label": "Use Case", "permission_required": ["view-use-case-churn"], "items": [{"type": "item", "href": "/use-case/churn-retail-model", "icon": "Activity", "label": "Churn Retail Model", "permission_required": ["view-use-case-churn"]}]}]',
             "value_type": ConfigValueType.json,
             "description": "Struktur JSON untuk navigasi Sidebar Frontend secara dinamis.",
             "is_editable": True,
@@ -380,8 +380,12 @@ async def seed_system_configs(db: AsyncSession) -> None:
         result = await db.execute(
             select(SystemConfig).where(SystemConfig.key == cfg["key"])
         )
-        if not result.scalars().first():
+        existing_cfg = result.scalars().first()
+        if not existing_cfg:
             db.add(SystemConfig(**cfg))
+        elif cfg["key"] == "frontend.navigation.menus":
+            existing_cfg.value = cfg["value"]
+            db.add(existing_cfg)
 
     await db.commit()
     print(f"System config seeding completed ({len(default_configs)} entries).")
