@@ -35,7 +35,7 @@ export interface QueryParams {
 
 // ── Service ─────────────────────────────────────────────────────────────────
 
-const BASE = 'api/engine/explorer';
+const BASE = 'api/dw/engine/explorer';
 
 export class DataExplorerService {
     static async getTables(): Promise<TableInfo[]> {
